@@ -1,0 +1,760 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ad Copy Workbench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Carlito:wght@400;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: one upload line, three tabs. Ads = MLR QA Checker unit cards under a campaign heading. Tree = column cards + elbow wires, as in the Account Structure Tree. */
+:root{
+  --paper:#ffffff; --surface:#f3f5f8; --sunk:#e9edf2;
+  --ink:#131a24; --ink-2:#4b5766; --ink-3:#7c8797;
+  --rule:#d9dfe7; --rule-2:#c3ccd8;
+  --indigo:#2b4b8c; --indigo-soft:#eaeffa; --on-indigo:#ffffff;
+  --ok:#0f7b55; --ok-bg:#e4f3ec; --bad:#b0261c; --bad-bg:#fbe3e1;
+  --soft:#8f5d00; --soft-bg:#fbf0d6; --mute:#4b5766; --mute-bg:#eef1f5;
+  --asset:Calibri,Carlito,"Segoe UI",system-ui,sans-serif;
+  --ui:"Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#121720; --surface:#181f2a; --sunk:#202836;
+  --ink:#e8ecf2; --ink-2:#a8b3c2; --ink-3:#7b8798;
+  --rule:#2c3644; --rule-2:#3a4655;
+  --indigo:#8fb0f0; --indigo-soft:#1d2942; --on-indigo:#121720;
+  --ok:#5cc79b; --ok-bg:#15261f; --bad:#f0897d; --bad-bg:#2b1715;
+  --soft:#e0b054; --soft-bg:#2a2214; --mute:#a8b3c2; --mute-bg:#1e2632; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121720; --surface:#181f2a; --sunk:#202836;
+  --ink:#e8ecf2; --ink-2:#a8b3c2; --ink-3:#7b8798;
+  --rule:#2c3644; --rule-2:#3a4655;
+  --indigo:#8fb0f0; --indigo-soft:#1d2942; --on-indigo:#121720;
+  --ok:#5cc79b; --ok-bg:#15261f; --bad:#f0897d; --bad-bg:#2b1715;
+  --soft:#e0b054; --soft-bg:#2a2214; --mute:#a8b3c2; --mute-bg:#1e2632; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--surface);color:var(--ink);font:14px/1.5 var(--ui);padding-inline:20px;padding-block:26px 80px}
+.wrap{max-width:1280px;margin:0 auto}
+.masthead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;padding-bottom:16px;border-bottom:2px solid var(--ink);margin-bottom:16px}
+.masthead h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0;line-height:1.15}
+.masthead p{margin:0;color:var(--ink-2);font-size:13px}
+input,select,textarea,button{font-family:inherit;color:var(--ink)}
+select,input[type=text]{font-size:12px;padding:4px 7px;border:1px solid var(--rule-2);border-radius:5px;background:var(--paper);max-width:100%}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:1px}
+.load{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.load label{font-weight:600}
+.load input{font-size:13px;max-width:100%}
+.load .help{color:var(--ink-2);font-size:12px}
+.load .help b{color:var(--ink)}
+#status{font-size:12px;color:var(--ink-2);overflow-wrap:anywhere;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.file{display:inline-flex;align-items:center;gap:6px;background:var(--ok-bg);color:var(--ok);font-weight:600;border-radius:20px;padding:2px 4px 2px 10px}
+.file button{appearance:none;border:0;background:none;color:inherit;font-size:16px;line-height:1;cursor:pointer;padding:0 6px;border-radius:20px}
+.file button:hover{background:var(--paper)}
+.toolbar{display:flex;flex-wrap:wrap;gap:0 16px;align-items:center;border-bottom:1px solid var(--rule);margin-bottom:12px}
+.tab{appearance:none;border:0;background:none;font-size:13px;font-weight:600;color:var(--ink-3);padding:10px 4px 8px;margin-right:10px;cursor:pointer;border-bottom:3px solid transparent}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--indigo)}
+.filters{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:6px 0;font-size:11.5px;color:var(--ink-2)}
+.filters label{display:flex;align-items:center;gap:5px}
+.blockhead{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:12.5px;font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--ink);margin:18px 0 10px;overflow-wrap:anywhere}
+.blockhead span{font-weight:500;color:var(--ink-2);font-size:11.5px;font-variant-numeric:tabular-nums}
+.unit{border:1px solid var(--rule);border-radius:8px;margin-bottom:12px;overflow:hidden;background:var(--paper);--cols:230px 1fr 1fr}
+.colhead,.adrow{display:grid;grid-template-columns:var(--cols)}
+.colhead{background:var(--sunk);border-bottom:1px solid var(--rule)}
+.colhead>div{padding:6px 10px;font-size:10.5px;font-weight:600;color:var(--ink-2);border-right:1px solid var(--rule);display:flex;justify-content:space-between;gap:8px}
+.colhead>div:last-child{border-right:0}
+.idcell{padding:10px 11px;border-right:1px solid var(--rule);min-width:0}
+.idcell .who{font-weight:600;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.idcell dl{margin:9px 0 0;font-size:11px;display:grid;grid-template-columns:auto 1fr;gap:4px 9px;align-items:baseline}
+dt{color:var(--ink-3)} dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+dd.big{font-size:15px;font-weight:800}
+.flag{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.flag.ok{background:var(--ok-bg);color:var(--ok)}.flag.bad{background:var(--bad-bg);color:var(--bad)}
+.flag.soft{background:var(--soft-bg);color:var(--soft)}.flag.mute{background:var(--mute-bg);color:var(--mute)}
+.flag.str{font-size:14px;font-weight:800;padding:2px 9px}
+.btn{appearance:none;border:1px solid var(--rule-2);background:var(--paper);font-size:11px;font-weight:600;line-height:1;padding:5px 9px;border-radius:5px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--indigo)}
+.btn.on,.btn.pri{background:var(--indigo);border-color:var(--indigo);color:var(--on-indigo)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.idcell .btn{margin-top:10px}
+.assetcol{border-right:1px solid var(--rule);min-width:0}
+.assetcol:last-child{border-right:0}
+.asset{display:grid;grid-template-columns:24px minmax(0,1fr) auto;border-bottom:1px solid var(--rule);align-items:center;column-gap:8px;min-height:27px}
+.asset .n{padding-left:8px;font-size:10px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.asset .txt{font-family:var(--asset);font-size:12.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.asset .txt input{width:100%;font-family:var(--asset);font-size:12.5px;padding:2px 6px}
+.asset .side{padding-right:8px;font-size:10.5px;display:flex;align-items:center;gap:6px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.asset .vd{font-weight:700}
+.assetcol[data-label="Descriptions"] .asset .txt{white-space:normal;overflow:visible;padding:4px 0}
+.tips{margin-top:9px;font-size:11px;color:var(--ink-2);line-height:1.35}.tips b{color:var(--ink);font-size:10.5px}.tips ul{margin:3px 0 0;padding-left:15px}
+.example{background:var(--soft-bg);color:var(--soft);border:1px dashed var(--soft);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;margin-bottom:10px}
+.load ul{margin:2px 0 0;padding-left:18px;font-size:12px;color:var(--ink-2)}.load li b{color:var(--ink)}
+.asset.live{background:var(--ok-bg)}.asset.live .vd{color:var(--ok)}
+.asset.soft{background:var(--soft-bg)}.asset.soft .vd{color:var(--soft)}
+.asset.sug{background:var(--indigo-soft)}.asset.sug .vd{color:var(--indigo)}
+.recbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:var(--indigo-soft);border:1px solid var(--rule-2);border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:10px}
+.recbar details{margin:0;background:none;border:0;flex-basis:100%}.recbar summary{padding:0;font-size:12px}.recbar ul{margin:6px 0 0;padding-left:18px;font-size:12px}
+.asset.cut{background:var(--mute-bg)}.asset.cut .txt{text-decoration:line-through;color:var(--ink-3)}.asset.cut .vd{color:var(--bad)}
+.asset .btn{padding:3px 7px}
+.over{color:var(--bad);font-weight:700}
+.addrow{padding:6px 10px}
+.scroll{overflow-x:auto;background:var(--paper);border:1px solid var(--rule);border-radius:8px}
+table.data{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
+.data th{font-size:10.5px;font-weight:600;color:var(--ink-2);text-align:left;padding:6px 9px;background:var(--sunk);border-bottom:1px solid var(--rule);white-space:nowrap}
+.data td{padding:5px 9px;border-bottom:1px solid var(--rule);vertical-align:baseline}
+.data td.r,.data th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.data td.hot{font-weight:700}
+.data.kw td{white-space:nowrap}
+.data th[data-sort]{cursor:pointer;user-select:none}
+.data th[data-sort]:hover{color:var(--indigo)}
+.sub{font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.empty{padding:20px;color:var(--ink-3);font-size:12.5px}
+/* tree */
+#chartCard{background:var(--paper);border:1px solid var(--rule);border-radius:10px}
+#chartTop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:10px 14px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--rule)}
+#chartTop select{max-width:170px}
+#cgBox{padding:10px 14px;border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-2)}
+#cgBox textarea{min-height:0}
+#chartTop .sp{flex:1}
+#zoomCtl{display:flex;align-items:center;border:1px solid var(--rule);border-radius:999px;padding:2px}
+#zoomCtl button{background:none;border:0;border-radius:999px;padding:4px 11px;font-size:13px;font-weight:600;cursor:pointer}
+#zoomCtl button:hover{background:var(--sunk)}
+#viewport{position:relative;min-height:320px;overflow:hidden;cursor:grab;touch-action:pan-y;border-radius:0 0 10px 10px}
+#viewport.drag{cursor:grabbing}
+#pan{position:absolute;left:0;top:0}
+#canvas{position:relative}
+#wires{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#wires path{fill:none;stroke:var(--rule-2);stroke-width:1.5}
+.colh{position:absolute;top:8px;height:22px;display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);cursor:pointer;user-select:none;white-space:nowrap}
+.colh:hover{color:var(--indigo)}.colh .cnt{font-weight:500;letter-spacing:0}
+.nd{position:absolute;background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:7px 44px 7px 28px;cursor:pointer;user-select:none}
+.nd:hover{border-color:var(--indigo)}
+.nd .dot{position:absolute;left:13px;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--c)}
+.nd .t{display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;line-height:18px;white-space:nowrap}
+.nd .t .tx{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nd .dup{flex:0 0 auto;font-size:11px;font-weight:600;color:var(--indigo);background:var(--indigo-soft);border-radius:999px;padding:0 7px;line-height:17px}
+.nd .m{font-size:11.5px;line-height:16px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.nd.b .t .tx{font-weight:600}
+.gsel{display:flex;align-items:center;gap:5px;color:var(--ink)}
+.ms{position:relative}
+.ms-btn{background:var(--paper);border:1px solid var(--rule-2);border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;min-width:190px;display:flex;justify-content:space-between;gap:8px}
+.ms-panel{position:absolute;z-index:50;top:calc(100% + 4px);right:0;background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);width:min(430px,calc(100vw - 40px));max-height:340px;overflow:auto;padding:8px}
+.ms-panel input[type=text]{width:100%;margin-bottom:6px}
+.ms-actions{display:flex;gap:14px;padding:2px 4px 6px;border-bottom:1px solid var(--rule);margin-bottom:6px}
+.ms-actions button{background:none;border:0;padding:0;color:var(--indigo);font-size:12px;font-weight:600;cursor:pointer}
+.ms-item{display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:12.5px;color:var(--ink);border-radius:5px;cursor:pointer}
+.ms-item:hover{background:var(--surface)}.ms-item span{overflow-wrap:anywhere}
+.nd.compact{padding:0 44px 0 26px;display:flex;align-items:center;border-radius:8px}
+.nd .sb{flex:0 0 auto;font-size:11.5px;font-weight:800;padding:1px 8px}
+.nd .tog{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--ink-2);background:var(--sunk);border-radius:999px;padding:1px 8px;line-height:16px}
+.nd.open .tog{background:transparent;color:var(--ink-3)}
+.nd .bar{position:absolute;left:12px;right:12px;bottom:0;height:2px;border-radius:2px;background:var(--sunk);overflow:hidden}
+.nd .bar i{display:block;height:100%;background:var(--c);opacity:.6}
+details{background:var(--paper);border:1px solid var(--rule);border-radius:8px;margin-top:14px}
+summary{cursor:pointer;padding:10px 13px;font-weight:600;font-size:13px}
+details .in{padding:0 13px 13px;display:flex;flex-direction:column;gap:8px}
+.exh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hint{font-size:12px;color:var(--ink-2)}
+.exh label{font-size:12.5px}
+textarea{width:100%;min-height:150px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--surface);border:1px solid var(--rule-2);border-radius:5px;padding:7px}
+@media (max-width:1000px){
+  .unit{--cols:minmax(0,1fr)}
+  .colhead{display:none}
+  .idcell,.assetcol{border-right:0;border-bottom:1px solid var(--rule)}
+  .assetcol::before{content:attr(data-label);display:block;padding:5px 10px;font-size:10.5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--rule)}
+  .filters{margin-left:0}
+}
+@media (max-width:640px){body{padding-inline:16px}.asset .txt{white-space:normal}}
+</style>
+
+<div class="wrap">
+  <div class="masthead"><h1>Ad Copy Workbench</h1><p>See every ad, its copy and its numbers in one view.</p></div>
+
+  <div class="load">
+    <label for="file">Upload files</label>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv" multiple>
+    <span class="help">Choose any of these Google Ads downloads (.csv or .xlsx), one or several at once. Suggested columns:</span>
+    <ul>
+      <li><b>Ad report:</b> Cost, CPC, CTR, ad strength, ad strength improvements</li>
+      <li><b>Asset report:</b> Cost, CPC, CTR</li>
+      <li><b>Keyword report:</b> Cost, CPC, CTR, Quality Score (hist.)</li>
+    </ul>
+    <div id="status">Nothing uploaded yet.</div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tab" data-tab="ads" aria-selected="true">Ads</button>
+    <button class="tab" data-tab="assets" aria-selected="false">Assets</button>
+    <button class="tab" data-tab="kws" aria-selected="false">Keywords</button>
+    <button class="tab" data-tab="map" aria-selected="false">Campaign tree</button>
+    <div class="filters">
+      <label><input type="checkbox" id="fDedupe" checked> Combine match types</label>
+      <div class="ms"><button type="button" class="ms-btn" id="msBtn"><span id="msLabel">All campaigns</span><span>▾</span></button>
+        <div class="ms-panel" id="msPanel" hidden><input type="text" id="msSearch" placeholder="Search campaigns…" aria-label="Search campaigns"><div class="ms-actions"><button type="button" id="msAll">Select all</button><button type="button" id="msNone">Clear all</button></div><div id="msList"></div></div></div>
+      <label>Status <select id="fStatus"><option value="all">All</option><option value="active">Active only</option><option value="inactive">Paused only</option></select></label>
+      <label id="lSort">Sort <select id="fSort"></select></label>
+      <label>Contains <input type="text" id="fQ" style="width:110px"></label>
+    </div>
+  </div>
+
+  <div id="view"></div>
+
+  <details id="dCopilot"><summary>Copilot suggestions</summary>
+    <div class="in">
+      <div class="exh"><b>1.</b><label for="fScope">Include</label><select id="fScope"><option value="all">All ad groups shown</option><option value="25">25 weakest ad groups</option><option value="10">10 weakest ad groups</option><option value="5">5 weakest ad groups</option></select><button class="btn pri" data-copy="prompt">Copy prompt</button><span class="hint" id="pHint"></span></div>
+      <textarea id="prompt" readonly aria-label="Copilot prompt"></textarea>
+      <div class="exh"><b>2.</b><label for="reply">Paste Copilot's reply below</label><button class="btn pri" id="bPaste">Show suggestions</button><span id="pMsg" class="hint"></span></div>
+      <textarea id="reply" placeholder="A1 | H | New headline text | Reason" aria-label="Copilot's reply"></textarea>
+      <div class="exh"><button class="btn" id="bXlsx">Download suggestions and changes (Excel)</button><span id="xMsg" class="hint">Upload this file later with the ad report to pick up where you left off.</span></div>
+    </div></details>
+</div>
+
+<script>
+/*PURE-START*/
+const HMAX=30,DMAX=90,HCAP=15,DCAP=4,LOWVOL=100;
+const norm=s=>String(s==null?"":s).trim().replace(/\s+/g," ");
+const blank=v=>{const s=norm(v);return s===""||s==="--"};
+const num=v=>{if(typeof v==="number")return v;const x=parseFloat(String(v==null?"":v).replace(/[^0-9.\-]/g,""));return isNaN(x)?null:x};
+const rate=v=>{if(blank(v))return null;const n=num(v);if(n==null)return null;return typeof v==="string"&&v.includes("%")?n/100:n};
+const isActive=(status,own)=>!/paused|not eligible|removed|disapproved/i.test(status)&&!/paused|removed/i.test(own||"");
+function parseCampaign(name){
+  const tok=String(name).split("_").map(x=>x.trim()),si=tok.findIndex((t,i)=>i>0&&/^(non[- ]?brand|brand|unbranded|compet\w*|conquest\w*)\b/i.test(t));
+  const p={brand:tok[0]||"(none)",market:"(none)",segment:"(unclassified)",theme:"(unclassified)",channel:"(none)",year:"No year"};
+  const yi=tok.length>1&&/^(19|20)\d\d$/.test(tok[tok.length-1])?tok.length-1:-1;if(yi>-1)p.year=tok[yi];
+  if(si>-1){const t=tok[si];p.segment=/^non/i.test(t)||/^unbranded/i.test(t)?"Non-Brand":/^brand/i.test(t)?"Brand":"Competitive";
+    if(si>1)p.market=tok.slice(1,si).join("_");
+    const dash=t.replace(/^(non[- ]?brand|brand|unbranded|compet\w*|conquest\w*)/i,"").match(/^\s*-\s*(.+)$/),rest=tok.slice(si+1,yi>-1?yi:tok.length);
+    if(dash){p.theme=dash[1];p.channel=rest[0]||"(none)"}else{p.theme=rest[0]||"(none)";p.channel=rest[1]||"(none)"}}
+  return p}
+const MT=/\b(exact|phrase|broad|bmm)\b/i;
+const matchOf=g=>{const m=String(g).match(MT);return m?m[1][0].toUpperCase()+m[1].slice(1).toLowerCase():""};
+const baseGroup=g=>norm(String(g).replace(/[\s\-–|_:\/(]*\b(exact|phrase|broad|bmm)\b(\s*match)?\)?/ig," "))||norm(g);
+function openSheet(rows,test){
+  const hi=rows.findIndex(r=>test(r.map(c=>norm(c).toLowerCase())));if(hi<0)return null;
+  const head=rows[hi].map(c=>norm(c).toLowerCase());
+  const col=name=>head.reduce((a,h,i)=>(h===name&&a.push(i),a),[]);
+  const get=(r,...names)=>{for(const n of names)for(const i of col(n))if(!blank(r[i]))return r[i];return ""};
+  return {head,get,body:rows.slice(hi+1),has:(...n)=>n.some(x=>head.includes(x))};
+}
+function parseAdRows(rows){
+  const s=openSheet(rows,l=>l.includes("campaign")&&l.includes("ad group"));
+  if(!s)return {error:"No header row with Campaign and Ad group columns."};
+  if(!s.has("headline 1"))return {error:"No Headline 1 column. This does not look like an ad report.",head:s.head};
+  const {get}=s,hasType=s.has("row type"),ads=[];
+  s.body.forEach(r=>{
+    if(hasType?norm(get(r,"row type"))!=="Ad":/^total/i.test(norm(r[0]))||blank(get(r,"ad group")))return;
+    const lines=(pre,cap)=>{const out=[];for(let i=1;i<=cap;i++){const t=get(r,pre+" "+i);if(blank(t))continue;
+      const p=String(get(r,pre+" "+i+" position")).replace(/[^123]/g,"");out.push({text:norm(t),orig:norm(t),pin:p,origPin:p})}return out};
+    const h=lines("headline",HCAP),d=lines("description",DCAP);if(!h.length&&!d.length)return;
+    const clicks=num(get(r,"clicks"))||0,ctr=rate(get(r,"ctr")),im=num(get(r,"impr.","impressions"));
+    const conv=get(r,"conversions","conv."),val=get(r,"conv. value","conversion value");
+    ads.push({id:ads.length,campaign:norm(get(r,"campaign")),group:norm(get(r,"ad group")),
+      type:norm(get(r,"ad type")),active:isActive(get(r,"status"),get(r,"ad status")),status:norm(get(r,"status","ad status")),reason:norm(get(r,"status reasons")),strength:norm(get(r,"ad strength")),
+      tips:norm(get(r,"ad strength improvements")),url:norm(get(r,"final url")),
+      clicks,cost:num(get(r,"cost"))||0,impr:im!=null?im:(ctr?clicks/ctr:0),
+      conv:blank(conv)?null:num(conv),value:blank(val)?null:num(val),h,d});
+  });
+  return ads.length?{ads,head:s.head}:{error:"No ads found under the header row.",head:s.head};
+}
+const bareKw=k=>norm(String(k).replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g,"").replace(/\+/g,""));
+function parseKwRows(rows){
+  const s=openSheet(rows,l=>l.includes("campaign")&&(l.includes("keyword")||l.includes("search keyword")));
+  if(!s)return {error:"No header row with Campaign and Keyword columns."};
+  const {get}=s,hasType=s.has("row type"),m=new Map(),byDay=s.has("day","date");
+  const dayVal=v=>typeof v==="number"?v:(Date.parse(v)||0);
+  s.body.forEach(r=>{
+    const raw=norm(get(r,"keyword","search keyword"));
+    if(!raw||/^total/i.test(raw)||/^total/i.test(norm(r[0]))||(hasType&&/^total/i.test(norm(get(r,"row type")))))return;
+    let mt=norm(get(r,"match type","search keyword match type"));
+    mt=/exact/i.test(mt)?"Exact":/phrase/i.test(mt)?"Phrase":/broad/i.test(mt)?"Broad":/^\[.*\]$/.test(raw)?"Exact":/^".*"$/.test(raw)?"Phrase":"Broad";
+    const campaign=norm(get(r,"campaign")),group=norm(get(r,"ad group")),kw=bareKw(raw),key=[campaign,group,kw,mt].join("\u0000");
+    const k=m.get(key)||{campaign,group,kw,match:mt,clicks:0,impr:0,cost:0,qsNow:null,hist:[],expCtr:"",adRel:"",lp:"",status:""};
+    const clicks=num(get(r,"clicks"))||0,ctr=rate(get(r,"ctr")),im=num(get(r,"impr.","impressions"));
+    k.clicks+=clicks;k.cost+=num(get(r,"cost"))||0;k.impr+=im!=null?im:(ctr?clicks/ctr:0);
+    const day=dayVal(get(r,"day","date")),q=get(r,"quality score"),qh=get(r,"quality score (hist.)");
+    if(!blank(q))k.qsNow=num(q);
+    if(!blank(qh))k.hist.push({day,v:num(qh)});
+    k.expCtr=norm(get(r,"exp. ctr","expected ctr"))||k.expCtr;k.adRel=norm(get(r,"ad relevance"))||k.adRel;
+    k.lp=norm(get(r,"landing page exp.","landing page experience"))||k.lp;k.status=norm(get(r,"status","keyword status"))||k.status;k.active=isActive(get(r,"status"),get(r,"keyword status"));
+    m.set(key,k)});
+  const kws=[...m.values()].map(k=>{k.hist.sort((a,b)=>a.day-b.day);
+    const first=k.hist.length?k.hist[0].v:null,last=k.hist.length?k.hist[k.hist.length-1].v:null;
+    k.qsHist=byDay?first:last;if(k.qsNow==null&&byDay)k.qsNow=last;
+    k.qsDelta=k.qsNow!=null&&k.qsHist!=null?k.qsNow-k.qsHist:null;delete k.hist;return k});
+  return kws.length?{kws,head:s.head,byDay}:{error:"No keywords found under the header row.",head:s.head};
+}
+function parseAssetRows(rows){
+  const s=openSheet(rows,l=>l.includes("asset")&&!l.includes("headline 1")&&(l.includes("campaign")||l.includes("asset type")||l.includes("impr.")));
+  if(!s)return {};
+  const {get}=s,out=[];
+  s.body.forEach(r=>{const text=norm(get(r,"asset"));if(!text||/^total/i.test(text)||/^total/i.test(norm(r[0])))return;
+    const t=norm(get(r,"asset type","type","field type","used as"));let k=/headline/i.test(t)?"h":/description/i.test(t)?"d":t?null:(text.length<=30?"h":"d");
+    if(/long headline/i.test(t))k=null;if(!k)return;
+    const clicks=num(get(r,"clicks"))||0,c=rate(get(r,"ctr")),im=num(get(r,"impr.","impressions"));
+    out.push({text,k,campaign:norm(get(r,"campaign")),group:norm(get(r,"ad group")),clicks,impr:im!=null?im:(c?clicks/c:0),cost:num(get(r,"cost"))||0,used:num(get(r,"used by")),label:norm(get(r,"performance","performance label","asset performance"))})});
+  return out.length?{assets:out,head:s.head}:{};
+}
+function parseRecRows(rows){
+  const s=openSheet(rows,l=>l.includes("campaign")&&l.includes("new text")&&l.includes("action"));if(!s)return {};
+  const {get}=s,recs=[];
+  s.body.forEach(r=>{const campaign=norm(get(r,"campaign")),group=norm(get(r,"ad group")),a=norm(get(r,"action")),cur=norm(get(r,"current text","in engine today")),txt=norm(get(r,"new text"));
+    if(!campaign||(!txt&&!cur))return;
+    const action=/replace|edit|swap/i.test(a)?"replace":/remove|delete|cut/i.test(a)?"remove":"add";
+    recs.push({campaign,group,k:/desc/i.test(norm(get(r,"type")))?"d":"h",action,cur,text:action==="remove"?"":txt,reason:norm(get(r,"reason")),accepted:/accept/i.test(norm(get(r,"status")))})});
+  return recs.length?{recs}:{};
+}
+/* Copilot's pasted chat reply. Accepts "A1 | H | text | reason" with pipes or tabs (a copied table), or an A1 heading
+   followed by "H: text" lines, or Headlines / Descriptions sub-headings with bullets. Anything else is skipped. */
+function parseReply(text){
+  const out=[],T=/^(h|d|headline|description)s?\s*#?\d*$/i,typ=x=>/^d/i.test(x)?"d":"h",ID=/^\[?(A\d+)\]?$/i;
+  const tidy=x=>norm(x).replace(/^["“”']+|["“”']+$/g,"").replace(/\s*[\(\[]\s*\d+\s*(chars?|characters)?\s*[\)\]]\s*$/i,"").trim();
+  let curId=null,curType=null;
+  const add=(ref,k,t,reason)=>{t=tidy(t||"");if(ref&&t)out.push({ref:ref.toUpperCase(),k,action:"add",cur:"",text:t,reason:norm(reason||"")})};
+  /* a reply pasted as one long run-on line: start a new line at every "A1 | H |" */
+  String(text).replace(/\s+(?=\[?A\d+\]?\s*[|\t]\s*(?:H|D|Headlines?|Descriptions?)\s*\d*\s*[|\t])/gi,"\n").split(/\r?\n/).forEach(raw=>{
+    let line=raw.replace(/`|\*\*|__/g,"").trim();if(!line)return;
+    const bullet=/^(?:[-*•–]|\d+[.)])\s+/.test(line);line=line.replace(/^#+\s*/,"").replace(/^(?:[-*•–]|\d+[.)])\s+/,"").replace(/^\|/,"").replace(/\|$/,"").trim();
+    let c=line.split(/\s*\|\s*|\t+/).map(x=>norm(x)).filter((x,i,a)=>x||i<a.length-1);
+    if(!c.length||c.every(x=>/^:?-{2,}:?$/.test(x)))return;
+    let id=null;
+    if(ID.test(c[0])){id=c[0].match(ID)[1];c=c.slice(1);if(!c.length){curId=id;curType=null;return}}
+    else{const m=line.match(/^\[?(A\d+)\]?(?=[\s:.\-–—>\]]|$)/i);if(m&&c.length<3&&!T.test(c[0])){curId=m[1];curType=null;return}}
+    const ref=id||curId;
+    if(id){curId=id}
+    if(T.test(c[0])&&c.length>1)return add(ref,typ(c[0]),c[1],c[2]);
+    const m2=c[0].match(/^(headline|description|h|d)s?\s*#?\d*\s*[:\-–—]\s*(.+)$/i);
+    if(m2)return add(ref,typ(m2[1]),m2[2],c[1]);
+    if(/^(new\s+)?(headlines?|descriptions?)\s*(\(\d+\))?\s*:?$/i.test(line)){curType=typ(line.replace(/^new\s+/i,""));return}
+    if(!id&&c.length>=4&&T.test(c[2])&&c[0]&&!/^campaign$/i.test(c[0])){
+      if(/^(add|replace|remove)$/i.test(c[3])){const a=c[3].toLowerCase();out.push({campaign:c[0],group:c[1],k:typ(c[2]),action:a,cur:tidy(c[4]||""),text:a==="remove"?"":tidy(c[5]||""),reason:c[6]||""})}
+      else out.push({campaign:c[0],group:c[1],k:typ(c[2]),action:"add",cur:"",text:tidy(c[3]),reason:c[4]||""});return}
+    if(bullet&&ref&&curType)add(ref,curType,c[0],c[1])});
+  return out;
+}
+/*PURE-END*/
+const L=(text,pin)=>({text,orig:text,pin:pin||"",origPin:pin||""});
+function sample(){
+  const C="Example Brand_US_Campaign";
+  S.ads=[{id:0,campaign:C,group:"Example Ad Group - Exact",active:true,status:"Eligible",reason:"",strength:"Average",tips:"Try including more keywords in your headlines;Try adding a few more unique headlines or unpinning some assets",url:"",impr:20000,clicks:1300,cost:2600,conv:null,value:null,
+    h:[L("Example Headline One","1"),L("Example Headline Two"),L("Example Headline Three"),L("Example Headline Four")],d:[L("Example description one. This is placeholder copy, not a real ad."),L("Example description two. Upload a report to replace it.")]}];
+  const kw=(k,match,impr,clicks,cost,qsNow,qsHist)=>({campaign:C,group:"Example Ad Group - Exact",kw:k,match,impr,clicks,cost,qsNow,qsHist,qsDelta:qsNow-qsHist,expCtr:"",adRel:"",lp:"",status:"Eligible",active:true});
+  S.kws=[kw("example keyword one","Exact",12000,960,1500,8,7),kw("example keyword two","Exact",8000,340,1100,4,6)];
+  S.assets=[["Example Headline One","h",20000,1300,"Best"],["Example Headline Two","h",9000,720,"Good"],["Example Headline Three","h",7000,280,"Low"],["Example description one. This is placeholder copy, not a real ad.","d",14000,950,"Good"]].map(([text,k,impr,clicks,label])=>({text,k,campaign:C,group:"Example Ad Group - Exact",impr,clicks,cost:0,label}));
+  indexAssets();
+}
+function indexAssets(){
+  const by=new Map(),all=new Map(),tot={h:{impr:0,clicks:0},d:{impr:0,clicks:0}},put=(m,key,a)=>{const e=m.get(key)||{impr:0,clicks:0};e.impr+=a.impr;e.clicks+=a.clicks;m.set(key,e)};
+  S.assets.forEach(a=>{const t=a.text.toLowerCase();put(by,[a.campaign,a.group,a.k,t].join("\u0000").toLowerCase(),a);put(all,a.k+"\u0000"+t,a);tot[a.k].impr+=a.impr;tot[a.k].clicks+=a.clicks});
+  S.aIdx={by,all,avg:{h:ctr(tot.h),d:ctr(tot.d)}};
+}
+/* an asset's own numbers: from this ad group if the report has it there, otherwise across the account */
+function assetStat(ad,k,text){
+  if(!S.aIdx||!S.assets.length)return null;const t=text.toLowerCase(),e={impr:0,clicks:0};
+  (S.groups.get(ad.id)||[ad]).forEach(a=>{const x=S.aIdx.by.get([a.campaign,a.group,k,t].join("\u0000").toLowerCase());if(x){e.impr+=x.impr;e.clicks+=x.clicks}});
+  return e.impr?e:S.aIdx.all.get(k+"\u0000"+t)||null;
+}
+const vsAvg=(v,avg,clicks)=>v==null||!avg||clicks<LOWVOL?"mute":(v-avg)/avg>.1?"ok":(v-avg)/avg<-.1?"bad":"mute";
+
+const PAL=['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'];
+const DIMS=[["brand","Brand"],["segment","Brand vs Non-brand vs Competitive"],["theme","Theme (from campaign name)"],["market","Market / tier"],["year","Year"],["channel","Channel / destination"]];
+const S={order:[],cstat:new Map(),limit:30,assets:[],aIdx:null,isSample:true,loaded:{},scope:"all",idMap:null,copiedMap:null,tab:"ads",sel:null,status:"all",g1:"",g2:"",cgOpen:false,custom:"Illness: illness, immunity, health\nCoupon: coupon\nProduct: grow & gain, protein, snack",recs:null,sort:{ads:"cost",kws:{col:"cost",dir:-1},assets:{col:"impr",dir:-1}},metrics:true,q:"",dedupe:true,edit:new Set(),ads:[],kws:[],groups:new Map(),expanded:new Map()};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const n0=x=>Math.round(x||0).toLocaleString();
+const pct=x=>x==null||!isFinite(x)?"–":(x*100).toFixed(2)+"%";
+const usd=x=>x==null||!isFinite(x)?"–":"$"+x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const usd0=x=>"$"+Math.round(x||0).toLocaleString();
+const sum=list=>list.reduce((t,a)=>({impr:t.impr+a.impr,clicks:t.clicks+a.clicks,cost:t.cost+a.cost}),{impr:0,clicks:0,cost:0});
+const ctr=a=>a.impr?a.clicks/a.impr:null, cpc=a=>a.clicks?a.cost/a.clicks:null;
+const live=x=>x.orig!==undefined;
+const lineState=x=>x.sug&&x.sug.kind==="add"?"sug":!live(x)?"new":x.cut?"cut":x.text!==x.orig?"edited":"";
+const kept=list=>list.filter(x=>!x.cut&&norm(x.text)&&lineState(x)!=="sug");
+const changed=a=>[...a.h,...a.d].some(x=>{const st=lineState(x);return st&&st!=="sug"});
+const pending=()=>{const ids=new Set();S.ads.forEach(a=>[...a.h,...a.d].forEach(x=>{if(x.sug)ids.add(x.sug.id)}));return ids.size};
+/* overlay Copilot's rows on the loaded ads; anything that cannot be verified against the engine is set aside, never applied */
+function applyRecs(recs){
+  const miss=[],seen=new Map(),done=new Set(),lc=x=>String(x||"").toLowerCase();
+  recs.forEach((r,i)=>{
+    /* the same change on two match types of one ad group is one suggestion, so the pair stays one card */
+    const key=[lc(r.campaign),lc(baseGroup(r.group||"")),r.ref||"",r.k,r.action,lc(r.cur),lc(r.text)].join("\u0000");
+    if(!seen.has(key))seen.set(key,i);const id=seen.get(key);
+    const fail=why=>miss.push({...r,why});let ads;
+    if(r.ref){const e=(S.copiedMap||S.idMap||new Map()).get(r.ref);if(!e)return fail("unknown ad group ID "+r.ref);ads=S.ads.filter(a=>e.ids.includes(a.id));r.group=e.group}
+    else{const inC=S.ads.filter(a=>lc(a.campaign)===lc(r.campaign));ads=inC.filter(a=>lc(a.group)===lc(r.group));
+      if(!ads.length)ads=inC.filter(a=>lc(baseGroup(a.group))===lc(baseGroup(r.group)))}
+    if(!ads.length)return fail("campaign / ad group not found");
+    const max=r.k==="h"?HMAX:DMAX;
+    if(r.action!=="remove"&&!r.text)return fail("no new text");
+    let hit=0;
+    ads.forEach(a=>{const list=a[r.k];
+      if(r.action!=="add"){const i=list.findIndex(x=>live(x)&&!x.sug&&lc(x.orig)===lc(r.cur));if(i<0)return;
+        list[i].sug={id,kind:"cut",reason:r.reason};if(r.action==="replace")list.splice(i+1,0,{text:r.text,pin:"",origPin:"",sug:{id,kind:"add",reason:r.reason}});hit++}
+      else{if(list.some(x=>lc(x.text)===lc(r.text)))return;list.push({text:r.text,pin:"",origPin:"",sug:{id,kind:"add",reason:r.reason}});hit++}});
+    if(!hit)return fail(r.action==="add"?"already in this ad":"current text is not in the engine");
+    done.add(id);if(r.accepted)S.ads.forEach(a=>resolve(a,id,true))});
+  S.recs={n:done.size,miss};
+}
+function resolve(ad,id,accept){
+  ["h","d"].forEach(k=>{ad[k]=ad[k].filter(x=>{if(!x.sug||x.sug.id!==id)return true;const kind=x.sug.kind;
+    if(kind==="add"){if(!accept)return false;x.reason=x.sug.reason;delete x.sug;return true}
+    if(accept)x.cut=true;delete x.sug;return true})});
+}
+const sig=a=>JSON.stringify([a.h,a.d]);
+try{const c=localStorage.getItem("acw_custom");if(c)S.custom=c}catch(_){}
+function dimVal(d,c){
+  if(d!=="custom")return parseCampaign(c)[d]||"(none)";
+  for(const line of S.custom.split("\n")){const i=line.indexOf(":");if(i<1)continue;
+    if(line.slice(i+1).split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).some(w=>c.toLowerCase().includes(w)))return line.slice(0,i).trim()}
+  return "Other"}
+const pass=r=>(!S.sel||S.sel.has(r.campaign))&&(S.status==="all"||(S.status==="active")===!!r.active);
+const visAds=()=>{const q=S.q.toLowerCase();return S.ads.filter(a=>pass(a)&&(!q||[...a.h,...a.d].some(x=>x.text.toLowerCase().includes(q))))};
+const visKws=()=>{const q=S.q.toLowerCase();return S.kws.filter(k=>pass(k)&&(!q||k.kw.toLowerCase().includes(q)))};
+const campCost=c=>{const a=S.ads.filter(x=>x.campaign===c);return sum(a.length?a:S.kws.filter(x=>x.campaign===c)).cost};
+function refresh(){
+  const m=new Map(),get=c=>m.get(c)||m.set(c,{ads:[],kwCost:0}).get(c);
+  S.ads.forEach(a=>get(a.campaign).ads.push(a));S.kws.forEach(k=>get(k.campaign).kwCost+=k.cost);S.assets.forEach(a=>a.campaign&&get(a.campaign));
+  m.forEach(e=>{e.t=sum(e.ads);e.cost=e.ads.length?e.t.cost:e.kwCost;e.nGroups=new Set(e.ads.map(a=>a.group)).size});
+  S.cstat=m;S.order=[...m.keys()].filter(Boolean).sort((x,y)=>m.get(y).cost-m.get(x).cost||x.localeCompare(y));S.limit=30;
+}
+const campOrder=()=>S.order;
+const strCls=s=>/excellent|good/i.test(s)?"ok":/average/i.test(s)?"soft":/poor/i.test(s)?"bad":"mute";
+const strRank=s=>({bad:0,soft:1,ok:2,mute:3}[strCls(s)]);
+const worstStr=ads=>[...new Set(ads.map(a=>a.strength||"–"))].sort((a,b)=>strRank(a)-strRank(b))[0];
+
+/* one card per ad, or one per set of same-copy ads whose ad groups differ only by match type */
+function cards(ads){
+  const m=new Map();
+  ads.forEach(a=>{const key=S.dedupe?[a.campaign,baseGroup(a.group),sig(a)].join("\u0000"):"id"+a.id;(m.get(key)||m.set(key,[]).get(key)).push(a)});
+  return [...m.values()].map(list=>({ads:list,lead:list[0],name:list.length>1?baseGroup(list[0].group):list[0].group,t:sum(list)}));
+}
+function flagFor(t,campaign){
+  const e=S.cstat.get(campaign);
+  if(t.clicks<LOWVOL)return["mute","Low volume"];
+  if(!e||e.nGroups<2)return["mute",""];
+  const v=ctr(t),g=ctr(e.t);if(!v||!g)return["mute",""];
+  const d=(v-g)/g;return d>.1?["ok","Above campaign"]:d<-.1?["bad","Below campaign"]:["mute",""];
+}
+
+function lineRow(ad,k,i,ed){
+  const x=ad[k][i],max=k==="h"?HMAX:DMAX,st=lineState(x),len=x.text.length,at=`data-ad="${ad.id}" data-k="${k}" data-i="${i}"`,sg=x.sug;
+  let cls=st==="cut"?"cut":st?"soft":"live",vd=st==="cut"?"Crossed out":st==="new"?"New":st==="edited"?"Edited":"In engine";
+  if(sg){cls="sug";vd=sg.kind==="add"?(len>max?"Suggested · too long":"Suggested"):"Suggested: remove"}
+  const text=ed&&st!=="cut"&&!sg?`<input type="text" class="ln" id="t-${ad.id}-${k}-${i}" ${at} value="${esc(x.text)}" aria-label="Line text">`:esc(x.text);
+  const tool=sg?`<button class="btn" data-act="yes" data-ad="${ad.id}" data-sug="${sg.id}">Accept</button><button class="btn" data-act="no" data-ad="${ad.id}" data-sug="${sg.id}">Reject</button>`
+    :!ed?"":st==="new"?`<button class="btn" data-act="delnew" ${at}>Delete</button>`:st?`<button class="btn" data-act="undo" ${at}>Undo</button>`:`<button class="btn" data-act="cut" ${at}>Cross out</button>`;
+  return `<div class="asset ${cls}" title="${sg?esc(sg.reason||"No reason given"):st==="edited"?"In engine: "+esc(x.orig):""}"><div class="n">${i+1}</div><div class="txt">${text}</div><div class="side">${(()=>{const a=live(x)&&!sg?assetStat(ad,k,x.orig):null;return a?`<span class="flag ${vsAvg(ctr(a),S.aIdx.avg[k],a.clicks)}" title="This asset's own CTR from the asset report (${n0(a.impr)} impr.)">${pct(ctr(a))}</span>`:""})()}<span class="vd">${vd}</span>${x.pin?`<span>Pin ${x.pin}</span>`:""}${st==="cut"?"":`<span class="cnt${len>max?" over":""}">${len}/${max}</span>`}${tool}</div></div>`;
+}
+function viewAds(){
+  const ads=visAds();S.groups=new Map();
+  if(!ads.length)return `<div class="empty">${S.ads.length?"No ads match these filters.":"Upload the ad report to see ads."}</div>`;
+  const key={cost:c=>-c.t.cost,ctrLo:c=>ctr(c.t)||0,str:c=>strRank(worstStr(c.ads))}[S.sort.ads];
+  let out="";
+  if(S.recs){const p=pending(),m=S.recs.miss;
+    out+=`<div class="recbar"><b>Copilot suggestions</b><span>${S.recs.n} matched · ${p} waiting for you · ads with suggestions are listed first</span>${p?`<button class="btn" data-act="allyes">Accept all</button><button class="btn" data-act="allno">Reject all</button>`:""}
+    ${m.length?`<details open><summary>${m.length} set aside, not applied</summary><ul>${m.map(r=>`<li><b>${esc(r.text||r.cur)}</b> (${esc(r.group||r.campaign)}): ${esc(r.why)}</li>`).join("")}</ul></details>`:""}</div>`}
+  const hasSug=a=>[...a.h,...a.d].some(x=>x.sug)?0:1,co=campOrder(),byC=new Map();
+  ads.forEach(a=>(byC.get(a.campaign)||byC.set(a.campaign,[]).get(a.campaign)).push(a));
+  const rank=new Map([...byC].map(([c,l])=>[c,Math.min(...l.map(hasSug))]));let shown=0,total=0;
+  [...byC.keys()].sort((x,y)=>rank.get(x)-rank.get(y)||co.indexOf(x)-co.indexOf(y)).forEach(c=>{
+    const mine=byC.get(c),cs=cards(mine);total+=cs.length;if(shown>=S.limit)return;const t=sum(mine);
+    out+=`<div class="blockhead">${esc(c)}<span>${usd(t.cost)} · ${n0(t.clicks)} clicks · CTR ${pct(ctr(t))}</span></div>`;
+    cs.sort((a,b)=>hasSug(a.lead)-hasSug(b.lead)||key(a)-key(b)).forEach(card=>{if(shown>=S.limit)return;shown++;const ad=card.lead,f=flagFor(card.t,c),ed=S.edit.has(ad.id),str=worstStr(card.ads);S.groups.set(ad.id,card.ads);
+      out+=`<div class="unit"><div class="colhead"><div>Ad</div><div>Headlines <span>${kept(ad.h).length}/${HCAP}</span></div><div>Descriptions <span>${kept(ad.d).length}/${DCAP}</span></div></div>
+      <div class="adrow"><div class="idcell"><div class="who">${esc(card.name)}</div>
+        <dl><dt>Ad strength</dt><dd><span class="flag str ${strCls(str)}">${esc(str)}</span></dd>
+        <dt>CTR</dt><dd class="big">${pct(ctr(card.t))} ${f[1]?`<span class="flag ${f[0]}">${f[1]}</span>`:""}</dd>
+        ${card.ads.length>1?card.ads.map(a=>`<dt>${esc(matchOf(a.group)||a.group)}</dt><dd>${pct(ctr(a))} CTR</dd>`).join(""):""}
+        <dt>Clicks</dt><dd>${n0(card.t.clicks)}</dd><dt>Cost</dt><dd>${usd(card.t.cost)}</dd><dt>Avg. CPC</dt><dd>${usd(cpc(card.t))}</dd></dl>
+        ${(()=>{const t=[...new Set(card.ads.flatMap(a=>(a.tips||"").split(";").map(norm)).filter(Boolean))];return t.length?`<div class="tips"><b>Ad strength improvements</b><ul>${t.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""})()}
+        <button class="btn${ed?" on":""}" data-act="edit" data-ad="${ad.id}">${ed?"Done editing":"Edit copy"}</button></div>
+      ${["h","d"].map(k=>`<div class="assetcol" data-label="${k==="h"?"Headlines":"Descriptions"}">${ad[k].map((_,i)=>lineRow(ad,k,i,ed)).join("")}${ed?`<div class="addrow"><button class="btn" data-act="add" data-ad="${ad.id}" data-k="${k}"${kept(ad[k]).length>=(k==="h"?HCAP:DCAP)?" disabled":""}>Add ${k==="h"?"headline":"description"}</button></div>`:""}</div>`).join("")}
+      </div></div>`})});
+  if(total>shown)out+=`<div style="text-align:center;margin:14px 0"><button class="btn pri" data-act="more">Show 30 more (${total-shown} of ${total} left)</button></div>`;
+  return out;
+}
+
+function kwRows(list){
+  if(!S.dedupe)return list.map(k=>({...k,parts:[k]}));
+  const m=new Map();list.forEach(k=>{const key=[k.campaign,baseGroup(k.group),k.kw.toLowerCase()].join("\u0000");(m.get(key)||m.set(key,[]).get(key)).push(k)});
+  return [...m.values()].map(p=>{const qn=p.map(k=>k.qsNow).filter(v=>v!=null),qh=p.map(k=>k.qsHist).filter(v=>v!=null),now=qn.length?Math.min(...qn):null,hist=qh.length?Math.min(...qh):null;
+    return {...p[0],group:p.length>1?baseGroup(p[0].group):p[0].group,match:p.map(k=>k.match).join(", "),...sum(p),qsNow:now,qsHist:hist,qsDelta:now!=null&&hist!=null?now-hist:null,parts:p}});
+}
+const qsCls=v=>v==null?"mute":v>=7?"ok":v>=5?"soft":"bad";
+const KCOLS=[["kw","Keyword",0,k=>k.kw.toLowerCase()],["match","Match type",0,k=>k.match],["campaign","Campaign",0,k=>k.campaign.toLowerCase()],["group","Ad group",0,k=>k.group.toLowerCase()],
+  ["qs","Quality Score",1,k=>k.qsNow],["hist","QS (hist.)",1,k=>k.qsHist],["delta","Change",1,k=>k.qsDelta],["ctr","CTR",1,k=>ctr(k)],["cpc","Avg. CPC",1,k=>cpc(k)],["clicks","Clicks",1,k=>k.clicks],["cost","Cost",1,k=>k.cost]];
+function viewKws(){
+  if(!S.kws.length)return `<div class="empty">Upload the keyword report to see keywords.</div>`;
+  const so=S.sort.kws,fn=KCOLS.find(c=>c[0]===so.col)[3];
+  const rows=kwRows(visKws()).sort((a,b)=>{const x=fn(a),y=fn(b);if(x==null||x==="")return 1;if(y==null||y==="")return -1;return (x<y?-1:x>y?1:0)*so.dir});
+  if(!rows.length)return `<div class="empty">No keywords match these filters.</div>`;
+  const avg=ctr(sum(S.kws));
+  return `<div class="scroll"><table class="data kw"><thead><tr>${KCOLS.map(c=>`<th class="${c[2]?"r":""}" data-sort="${c[0]}" title="Sort by ${c[1]}">${c[1]}${so.col===c[0]?(so.dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(k=>{const d=k.qsDelta;
+    return `<tr><td><b>${esc(k.kw)}</b></td><td>${k.parts.length>1?k.parts.map(p=>`${p.match} ${pct(ctr(p))}`).join(" · "):esc(k.match)}</td><td>${esc(k.campaign)}</td><td>${esc(k.group)}</td>
+    <td class="r"><span class="flag str ${qsCls(k.qsNow)}">${k.qsNow??"–"}</span></td><td class="r">${k.qsHist==null?"–":`<span class="flag ${qsCls(k.qsHist)}">${k.qsHist}</span>`}</td>
+    <td class="r">${d==null||d===0?"–":`<span class="flag ${d>0?"ok":"bad"}">${d>0?"▲ +":"▼ "}${d}</span>`}</td>
+    <td class="r hot"><span class="flag ${vsAvg(ctr(k),avg,k.clicks)}" title="Account average ${pct(avg)}">${pct(ctr(k))}</span></td><td class="r hot">${usd(cpc(k))}</td><td class="r">${n0(k.clicks)}</td><td class="r">${usd(k.cost)}</td></tr>`}).join("")}</tbody></table></div>`;
+}
+
+const ACOLS=[["text","Asset",0,a=>a.text.toLowerCase()],["k","Type",0,a=>a.k],["ctr","CTR",1,a=>ctr(a)],["impr","Impr.",1,a=>a.impr],["clicks","Clicks",1,a=>a.clicks],["cost","Cost",1,a=>a.cost],["cpc","Avg. CPC",1,a=>cpc(a)],["n","Used by",1,a=>a.n],["label","Google rating",0,a=>a.label]];
+function viewAssets(){
+  if(!S.assets.length)return `<div class="empty">Upload the asset report to see how each headline and description performs.</div>`;
+  const q=S.q.toLowerCase(),m=new Map();
+  S.assets.filter(a=>(!S.sel||!a.campaign||S.sel.has(a.campaign))&&(!q||a.text.toLowerCase().includes(q))).forEach(a=>{const key=a.k+"\u0000"+a.text.toLowerCase(),e=m.get(key)||{text:a.text,k:a.k,impr:0,clicks:0,cost:0,n:0,labels:new Set()};
+    e.impr+=a.impr;e.clicks+=a.clicks;e.cost+=a.cost;e.n+=a.used||1;if(a.label&&a.label!=="--")e.labels.add(a.label);m.set(key,e)});
+  const so=S.sort.assets,fn=ACOLS.find(c=>c[0]===so.col)[3],rows=[...m.values()].map(e=>({...e,label:[...e.labels].join(" / ")})).sort((a,b)=>{const x=fn(a),y=fn(b);if(x==null||x==="")return 1;if(y==null||y==="")return -1;return (x<y?-1:x>y?1:0)*so.dir});
+  if(!rows.length)return `<div class="empty">No assets match these filters.</div>`;
+  const lab=l=>l.includes("/")?"mute":/best/i.test(l)?"ok":/low/i.test(l)?"bad":/good/i.test(l)?"soft":"mute";
+  const AC=S.assets.some(x=>x.label&&x.label!=="--")?ACOLS:ACOLS.slice(0,-1);
+  return `<div class="scroll"><table class="data kw"><thead><tr>${AC.map(c=>`<th class="${c[2]?"r":""}" data-sort="${c[0]}" title="Sort by ${c[1]}">${c[1]}${so.col===c[0]?(so.dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(a=>
+    `<tr><td style="white-space:normal;min-width:240px">${esc(a.text)}</td><td>${a.k==="h"?"Headline":"Description"}</td><td class="r hot"><span class="flag ${vsAvg(ctr(a),S.aIdx.avg[a.k],a.clicks)}" title="Average for ${a.k==="h"?"headlines":"descriptions"} ${pct(S.aIdx.avg[a.k])}">${pct(ctr(a))}</span></td><td class="r">${n0(a.impr)}</td><td class="r">${n0(a.clicks)}</td><td class="r">${a.cost?usd(a.cost):"–"}</td><td class="r">${a.cost?usd(cpc(a)):"–"}</td><td class="r">${a.n}</td>${AC===ACOLS?`<td>${a.label?`<span class="flag ${lab(a.label)}">${esc(a.label)}</span>`:"–"}</td>`:""}</tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ---- campaign tree: columns of cards joined by elbow wires ---- */
+const GAP=40,TOP=40;let CARD_H=50,ROW=66,view={k:1,x:24,y:8},lay=null,dragInfo=null,suppressClick=false;
+function treeModel(){
+  const ads=visAds(),kws=visKws(),g=x=>S.dedupe?baseGroup(x):x,root={id:"root",level:"root",name:"Account",kids:[]},dims=[S.g1,S.g2].filter(Boolean);
+  campOrder().forEach(c=>{
+    const ca=ads.filter(a=>a.campaign===c),ck=kws.filter(k=>k.campaign===c);if(!ca.length&&!ck.length)return;
+    const camp={id:"c›"+c,level:"campaign",name:c,kids:[],off:ca.length>0&&ca.every(a=>!a.active)};
+    [...new Set([...ca.map(a=>g(a.group)),...ck.map(k=>g(k.group))])].forEach(n=>{
+      const ga=ca.filter(a=>g(a.group)===n),gk=ck.filter(k=>g(k.group)===n),t=sum(ga);
+      const adNodes=cards(ga).map((cd,i)=>{const h=kept(cd.lead.h),p=h.find(x=>x.pin==="1")||h[0];
+        return {id:camp.id+"›"+n+"›ad"+i,level:"ad",name:p?p.text:"(no headline)",cost:cd.t.cost,off:cd.ads.every(a=>!a.active),dup:cd.ads.length>1?"×"+cd.ads.length:"",str:worstStr(cd.ads),m:[usd0(cd.t.cost),"CTR "+pct(ctr(cd.t))].join(" · ")}});
+      const cost=ga.length?t.cost:sum(gk).cost;
+      camp.kids.push({id:camp.id+"›"+n,level:"adgroup",name:n,cost,ads:adNodes,kws:[],off:ga.length>0&&ga.every(a=>!a.active),str:ga.length?worstStr(ga):"",m:[usd0(cost),ga.length&&"CTR "+pct(ctr(t))].filter(Boolean).join(" · ")})});
+    camp.kids.sort((a,b)=>b.cost-a.cost);camp.cost=camp.kids.reduce((s,x)=>s+x.cost,0);camp.n=1;
+    let p=root;
+    dims.forEach(d=>{const v=dimVal(d,c);let gn=p.kids.find(k=>k.level==="group"&&k.name.toLowerCase()===v.toLowerCase());
+      if(!gn){gn={id:p.id+"›g:"+v.toLowerCase(),level:"group",name:v,kids:[]};p.kids.push(gn)}p=gn});
+    p.kids.push(camp)});
+  (function roll(n){if(n.level==="campaign")return;n.kids.forEach(roll);n.cost=n.kids.reduce((s,x)=>s+x.cost,0);n.n=n.kids.reduce((s,x)=>s+x.n,0);n.off=n.kids.length>0&&n.kids.every(k=>k.off);n.kids.sort((a,b)=>b.cost-a.cost)})(root);
+  const share=c=>{const p=root.cost?c.cost/root.cost*100:0;return `${usd0(c.cost)} (${p>0&&p<1?p.toFixed(1):p.toFixed(0)}%)`},pl=(k,w)=>k+" "+w+(k===1?"":"s");
+  (function label(n){if(n.level==="root")n.m=usd0(n.cost)+" · "+pl(n.n,"campaign");else if(n.level==="group")n.m=share(n)+" · "+pl(n.n,"campaign");else{n.m=share(n)+" · "+pl(n.kids.length,"ad group");return}n.kids.forEach(label)})(root);
+  return root;
+}
+const isOpen=n=>S.expanded.has(n.id)?S.expanded.get(n.id):n.level==="adgroup"?false:n.level==="campaign"?S.order.length<=25:true;
+function layout(root){
+  const dl=d=>d==="custom"?"Custom":DIMS.find(x=>x[0]===d)[1],cols=[{label:"Account",w:190},...[S.g1,S.g2].filter(Boolean).map(d=>({label:dl(d),w:200})),{label:"Campaign",w:340},{label:"Ad group",w:260},{label:"Ads",w:270}];
+  let x=0;cols.forEach(c=>{c.x=x;x+=c.w+GAP});
+  const nodes=[],adsCol=cols.length-1;let row=0;
+  const mk=(n,col,r,color)=>{const it={n,col,row:r,color,kids:0,open:false,children:[],ads:[],kws:[]};nodes.push(it);return it};
+  (function place(n,col,color){
+    const it=mk(n,col,row,color);
+    if(n.level==="adgroup"){it.kids=n.ads.length;it.open=it.kids>0&&isOpen(n);
+      if(it.open){const r0=row;n.ads.forEach((a,i)=>it.ads.push(mk(a,adsCol,r0+i,color)));row=r0+Math.max(n.ads.length,1)-1}
+      return it}
+    it.kids=n.kids.length;it.open=it.kids>0&&isOpen(n);
+    if(it.open)n.kids.forEach((k,i)=>{if(i>0)row++;it.children.push(place(k,col+1,col===0?PAL[i%PAL.length]:color))});
+    return it})(root,0,"var(--indigo)");
+  nodes.forEach(it=>{const c=cols[it.col];it.x=c.x;it.w=c.w;it.y=TOP+it.row*ROW});
+  const last=cols[cols.length-1];return {cols,nodes,width:last.x+last.w,height:TOP+(row+1)*ROW};
+}
+function rpath(pts,r){
+  pts=pts.filter((p,i)=>i===0||p[0]!==pts[i-1][0]||p[1]!==pts[i-1][1]);let d="M"+pts[0][0]+" "+pts[0][1];
+  for(let i=1;i<pts.length-1;i++){const[x0,y0]=pts[i-1],[x1,y1]=pts[i],[x2,y2]=pts[i+1],d1=Math.hypot(x1-x0,y1-y0),d2=Math.hypot(x2-x1,y2-y1),rr=Math.min(r,d1/2,d2/2);
+    if(rr<.5){d+=" L"+x1+" "+y1;continue}
+    d+=" L"+(x1-(x1-x0)/d1*rr)+" "+(y1-(y1-y0)/d1*rr)+" Q"+x1+" "+y1+" "+(x1+(x2-x1)/d2*rr)+" "+(y1+(y2-y1)/d2*rr)}
+  const l=pts[pts.length-1];return d+" L"+l[0]+" "+l[1];
+}
+function viewMap(){
+  if(!S.ads.length&&!S.kws.length)return `<div class="empty">Upload the ad report to see the campaign tree.</div>`;
+  const cg=S.g1==="custom"||S.g2==="custom";
+  return `<div id="chartCard"><div id="chartTop"><span>Click a card or column title to open/close · drag to move</span><span class="sp"></span>
+  ${["g1","g2"].map((id,i)=>`<label class="gsel">${i?"then":"Group by"} <select id="${id}"><option value="">(none)</option>${DIMS.map(d=>`<option value="${d[0]}"${S[id]===d[0]?" selected":""}>${d[1]}</option>`).join("")}<option value="custom"${S[id]==="custom"?" selected":""}>Custom…</option></select></label>`).join("")}
+  ${cg?`<button class="btn" id="cgEdit">Edit buckets</button>`:""}
+  <label class="gsel"><input type="checkbox" id="fMetrics"${S.metrics?" checked":""}> Show cost and CTR</label>
+  <div id="zoomCtl"><button id="zOut" title="Zoom out">−</button><button id="zReset" title="Reset to 100%">100%</button><button id="zIn" title="Zoom in">+</button><button id="zFit" title="Fit the tree to the width">Fit</button></div></div>
+  ${cg&&S.cgOpen?`<div id="cgBox"><label for="cgText">One bucket per line, as <b>Name: word, word</b>. A campaign goes in the first bucket whose words appear in its name; the rest go to Other.</label><textarea id="cgText" rows="4">${esc(S.custom)}</textarea><div><button class="btn pri" id="cgApply">Apply</button></div></div>`:""}
+  <div id="viewport"><div id="pan"><div id="canvas"><svg id="wires"></svg><div id="colHead"></div><div id="cards"></div></div></div></div></div>`;
+}
+function drawTree(){
+  CARD_H=S.metrics?50:32;ROW=S.metrics?66:42;
+  const root=treeModel();if(!root.kids.length){$("cards").innerHTML=`<div class="empty">Nothing matches these filters.</div>`;return}
+  const L=lay=layout(root),maxBy={};L.nodes.forEach(it=>maxBy[it.col]=Math.max(maxBy[it.col]||0,it.n.cost));
+  $("cards").innerHTML=L.nodes.map(it=>{const n=it.n,share=maxBy[it.col]>0?n.cost/maxBy[it.col]:0,ds=S.metrics?Math.round(6+Math.sqrt(share)*8):8;
+    return `<div class="nd${["root","group","campaign"].includes(n.level)?" b":""}${it.open?" open":""}${S.metrics?"":" compact"}" data-id="${esc(n.id)}" title="${esc(n.name)}" style="left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${CARD_H}px;--c:${it.color}"><span class="dot" style="width:${ds}px;height:${ds}px"></span><div class="t"><span class="tx">${esc(n.name)}</span>${n.dup?`<span class="dup">${n.dup}</span>`:""}${n.str?`<span class="flag sb ${strCls(n.str)}">${esc(n.str)}</span>`:""}</div>${S.metrics?`<div class="m">${esc(n.m)}</div>`:""}${it.kids?`<span class="tog">${it.open?"▾":"▸ "+it.kids}</span>`:""}${S.metrics&&share>0?`<div class="bar"><i style="width:${Math.max(3,share*100).toFixed(1)}%"></i></div>`:""}</div>`}).join("");
+  const P=[],mid=it=>it.y+CARD_H/2,R=10;
+  L.nodes.forEach(it=>{const px=it.x+it.w,py=mid(it),wire=(list,sx)=>{if(!list.length)return;const tx=list[0].x-GAP/2;list.forEach(c=>P.push(rpath([[sx,py],[tx,py],[tx,mid(c)],[c.x,mid(c)]],R)))};
+    wire(it.children,px);wire(it.ads,px);wire(it.kws,it.ads.length?it.ads[0].x+it.ads[0].w:px)});
+  const w=$("wires");w.setAttribute("width",L.width);w.setAttribute("height",L.height);w.innerHTML=`<path d="${P.join(" ")}"/>`;
+  $("canvas").style.width=L.width+"px";$("canvas").style.height=L.height+"px";
+  const counts={};L.nodes.forEach(it=>counts[it.col]=(counts[it.col]||0)+1);
+  $("colHead").innerHTML=L.cols.map((c,i)=>`<div class="colh" data-col="${i}" style="left:${c.x}px;width:${c.w}px">${c.label}${counts[i]?`<span class="cnt">${counts[i]}</span>`:""}</div>`).join("");
+  if(!S.userZoom){view.k=Math.max(.65,Math.min(1,($("viewport").getBoundingClientRect().width-48)/L.width));view.x=24;view.y=8}
+  applyView();
+}
+function applyView(){const vp=$("viewport");if(!vp||!lay)return;
+  $("pan").style.left=Math.round(view.x)+"px";$("pan").style.top=Math.round(view.y)+"px";$("canvas").style.zoom=view.k;
+  vp.style.height=Math.max(320,Math.ceil(lay.height*view.k)+40)+"px";$("zReset").textContent=Math.round(view.k*100)+"%"}
+function zoomTo(k){const vp=$("viewport"),cx=vp.getBoundingClientRect().width/2,cy=100;k=Math.max(.2,Math.min(2,k));
+  view.x=cx-(cx-view.x)*k/view.k;view.y=Math.min(8,cy-(cy-view.y)*k/view.k);view.k=k;applyView()}
+document.addEventListener("pointerdown",e=>{suppressClick=false;if(e.button!==0||!e.target.closest("#viewport"))return;dragInfo={sx:e.clientX,sy:e.clientY,x:view.x,y:view.y,moved:false}});
+window.addEventListener("pointermove",e=>{if(!dragInfo)return;const dx=e.clientX-dragInfo.sx,dy=e.clientY-dragInfo.sy;if(!dragInfo.moved&&Math.hypot(dx,dy)<4)return;
+  dragInfo.moved=true;S.userZoom=true;$("viewport").classList.add("drag");view.x=dragInfo.x+dx;view.y=dragInfo.y+dy;applyView()});
+window.addEventListener("pointerup",()=>{suppressClick=!!(dragInfo&&dragInfo.moved);dragInfo=null;const vp=$("viewport");if(vp)vp.classList.remove("drag")});
+
+/* ---- export ---- */
+function buildWorkbook(){
+  const wb=XLSX.utils.book_new(),add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
+  const r4=x=>x==null||!isFinite(x)?"":Math.round(x*10000)/10000,r2=x=>x==null||!isFinite(x)?"":Math.round(x*100)/100;
+  add("Ads",[["Campaign","Ad group","Match type","Ad strength","CTR","Clicks","Cost","Avg. CPC","Headlines in engine","Descriptions in engine"],
+    ...S.ads.map(a=>[a.campaign,a.group,matchOf(a.group),a.strength,r4(ctr(a)),a.clicks,r2(a.cost),r2(cpc(a)),a.h.filter(live).map(x=>x.orig).join(" | "),a.d.filter(live).map(x=>x.orig).join(" | ")])]);
+  add("Keywords",[["Campaign","Ad group","Keyword","Match type","Quality Score","Quality Score (hist.)","QS change","CTR","Avg. CPC","Clicks","Cost"],
+    ...S.kws.map(k=>[k.campaign,k.group,k.kw,k.match,k.qsNow??"",k.qsHist??"",k.qsDelta??"",r4(ctr(k)),r2(cpc(k)),k.clicks,r2(k.cost)])]);
+  const ch=[["Campaign","Ad group","Type","Action","In engine today","New text","Characters","Status","Reason"]];
+  S.ads.forEach(a=>[["h","Headline"],["d","Description"]].forEach(([k,n])=>a[k].forEach(x=>{const st=lineState(x),sg=x.sug;
+    if(sg&&sg.kind==="cut")return ch.push([a.campaign,a.group,n,"Remove",x.orig,"","","Suggested",sg.reason||""]);
+    if(!st||(st==="new"&&!norm(x.text)))return;
+    ch.push([a.campaign,a.group,n,st==="cut"?"Remove":st==="edited"?"Edit":"Add",x.orig||"",st==="cut"?"":x.text,st==="cut"?"":x.text.length,st==="sug"?"Suggested":"Accepted",(sg?sg.reason:x.reason)||""])})));
+  add("Copy changes",ch);return wb;
+}
+function fillPrompt(){
+  if(!$("dCopilot").open){$("prompt").value="";return}
+  const p=promptText(),n=S.idMap.size;$("prompt").value=p;
+  $("pHint").textContent=n?`${n} ad group${n>1?"s":""}, ${n0(p.length)} characters.`+(n>40?" That is a lot for one Copilot message: narrow it with the campaign picker, Status, or the Include menu.":""):"";
+}
+function promptCards(){
+  const cs=cards(visAds().filter(a=>!a.type||/responsive search/i.test(a.type))).map(c=>{const g=ctr(S.cstat.get(c.lead.campaign).t),v=ctr(c.t);return {...c,rel:g&&v?v/g:1,sr:strRank(worstStr(c.ads))}});
+  cs.sort((a,b)=>a.sr-b.sr||a.rel-b.rel);return S.scope==="all"?cs:cs.slice(0,+S.scope);
+}
+function promptText(){
+  S.idMap=new Map();const cs=promptCards();
+  if(!cs.length)return "Load an ad report first.";
+  const shared=k=>cs.length<2?[]:kept(cs[0].lead[k]).map(x=>x.text).filter(t=>cs.every(c=>kept(c.lead[k]).some(x=>x.text===t)));
+  const sh=shared("h"),sd=shared("d"),list=a=>a.map(t=>"- "+t).join("\n");let total=0;
+  const blocks=cs.map((c,i)=>{const id="A"+(i+1),ad=c.lead,h=kept(ad.h),d=kept(ad.d),name=c.ads.length>1?baseGroup(ad.group):ad.group,nh=h.length<HCAP?HCAP-h.length:5;
+    S.idMap.set(id,{group:name,ids:c.ads.map(a=>a.id)});total+=nh+3;
+    const kw=kwRows(S.kws.filter(k=>k.campaign===ad.campaign&&c.ads.some(a=>a.group===k.group))).sort((a,b)=>b.cost-a.cost).slice(0,5).map(k=>k.kw+(k.qsNow!=null?` (QS ${k.qsNow})`:""));
+    const oh=h.map(x=>x.text).filter(t=>!sh.includes(t)),od=d.map(x=>x.text).filter(t=>!sd.includes(t));
+    return `[${id}] ${ad.campaign} > ${name}
+CTR ${pct(ctr(c.t))} · Ad strength ${worstStr(c.ads)}${kw.length?"\nTop keywords: "+kw.join(", "):""}${oh.length?"\nOther live headlines:\n"+list(oh):""}${od.length?"\nOther live descriptions:\n"+list(od):""}
+WRITE for ${id}: ${nh} new headlines and 3 new descriptions.`});
+  return `Write new Google Ads responsive search ad copy for the ${cs.length} ad group${cs.length>1?"s":""} below. Every ad group needs its own lines, written for that ad group's theme. Do not skip any ad group and do not stop early: I expect ${total} lines in total.
+
+Rules:
+- Headlines: ${HMAX} characters or fewer. Descriptions: ${DMAX} characters or fewer. Count spaces and symbols. Shorter is fine, longer is not.
+- Do not repeat or lightly reword a live line. Each new line needs a different angle.
+- Use the ad group name and its top keywords to make the lines specific to it.
+- Keep brand names and ® marks exactly as written in the live copy. Make no new product or health claims.
+
+Reply as plain text, NOT a table. One line per suggestion, exactly like this, with nothing before or after:
+A1 | H | Shop Kids Nutrition Shakes | Adds a shopping call to action
+A1 | D | Complete, balanced nutrition kids like. Order today. | Fills an open description slot
+(ID | H or D | new text | reason in under 10 words)
+${sh.length?"\nLive headlines in EVERY ad group below:\n"+list(sh)+"\n":""}${sd.length?"\nLive descriptions in EVERY ad group below:\n"+list(sd)+"\n":""}
+${blocks.join("\n\n")}`;
+}
+async function downloadXlsx(){
+  const msg=$("xMsg"),name="ad-copy-workbench.xlsx";let wb,dl=null;
+  try{wb=buildWorkbook()}catch(e){msg.textContent="Could not build the workbook.";return}
+  try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(_){}
+  try{if(dl){await dl.save({filename:name,data:XLSX.write(wb,{type:"array",bookType:"xlsx"})});msg.textContent="Saved."}else{XLSX.writeFile(wb,name);msg.textContent="Download started."}}
+  catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"The download did not go through."}
+}
+
+/* ---- render + events ---- */
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===S.tab));
+  const all=campOrder().length,nSel=S.sel?S.sel.size:all;$("msLabel").textContent=nSel===all?`All campaigns (${all})`:nSel===0?"None selected":`${nSel} of ${all} campaigns`;
+  const opts={ads:[["cost","Cost"],["ctrLo","CTR, low first"],["str","Ad strength, worst first"]]}[S.tab];
+  $("lSort").hidden=!opts;if(opts)$("fSort").innerHTML=opts.map(([v,l])=>`<option value="${v}"${S.sort[S.tab]===v?" selected":""}>${l}</option>`).join("");
+  draw();fillPrompt();
+}
+function draw(){
+  if(S.tab==="map"){if(!$("viewport"))$("view").innerHTML=viewMap();if($("viewport"))drawTree();return}
+  $("view").innerHTML=(S.isSample?`<div class="example">EXAMPLE PLACEHOLDER. This is made-up data to show the layout. Upload a report above to replace it.</div>`:"")+(S.tab==="ads"?viewAds():S.tab==="assets"?viewAssets():viewKws());
+}
+const clone=x=>JSON.parse(JSON.stringify(x));
+function mirror(ad){(S.groups.get(ad.id)||[]).forEach(o=>{if(o!==ad){o.h=clone(ad.h);o.d=clone(ad.d)}})}
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".ms"))$("msPanel").hidden=true;
+  if(e.target.closest("#msBtn")){$("msPanel").hidden=!$("msPanel").hidden;if(!$("msPanel").hidden)$("msSearch").focus();return}
+  if(e.target.id==="msAll"||e.target.id==="msNone"){S.sel=e.target.id==="msAll"?null:new Set();buildMs();return render()}
+  const th=e.target.closest("th[data-sort]");
+  if(th){const t=S.tab==="assets"?"assets":"kws",so=S.sort[t],c=th.dataset.sort;S.sort[t]=so.col===c?{col:c,dir:-so.dir}:{col:c,dir:(t==="kws"?KCOLS:ACOLS).find(x=>x[0]===c)[2]?-1:1};return draw()}
+  const nd=e.target.closest(".nd"),ch=e.target.closest(".colh");
+  if((nd||ch)&&lay){if(suppressClick)return;
+    if(nd){const it=lay.nodes.find(x=>x.n.id===nd.dataset.id);if(it&&it.kids){S.expanded.set(it.n.id,!it.open);drawTree()}}
+    else{const col=lay.nodes.filter(it=>it.col===+ch.dataset.col&&it.kids);if(col.length){const any=col.some(it=>!it.open);col.forEach(it=>S.expanded.set(it.n.id,any));drawTree()}}
+    return}
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.tab){S.limit=30;S.tab=t.dataset.tab;$("view").innerHTML="";return render()}
+  if(t.id==="cgEdit"){S.cgOpen=!S.cgOpen;$("view").innerHTML="";return draw()}
+  if(t.id==="cgApply"){S.custom=$("cgText").value;S.cgOpen=false;S.expanded.clear();try{localStorage.setItem("acw_custom",S.custom)}catch(_){}$("view").innerHTML="";return draw()}
+  if(t.id==="zIn"||t.id==="zOut"){S.userZoom=true;return zoomTo(t.id==="zIn"?view.k*1.2:view.k/1.2)}
+  if(t.id==="zReset"){S.userZoom=true;view={k:1,x:24,y:8};return applyView()}
+  if(t.id==="zFit"){S.userZoom=false;view={k:Math.max(.2,Math.min(1,($("viewport").getBoundingClientRect().width-48)/lay.width)),x:24,y:8};return applyView()}
+  if(t.id==="bXlsx")return downloadXlsx();
+  if(t.id==="bPaste"){const recs=parseReply($("reply").value),m=$("pMsg");
+    if(!S.ads.length){m.textContent="Load the ad report first.";return}
+    if(!recs.length){m.textContent="No lines in the expected format were found.";return}
+    S.ads.forEach(a=>resolveAll(a));applyRecs(recs);m.textContent=`Read ${recs.length} lines: ${S.recs.n} shown on the Ads tab, ${S.recs.miss.length} set aside.`;S.tab="ads";$("view").innerHTML="";render();window.scrollTo({top:0});return}
+  if(t.dataset.copy){if(!S.idMap)fillPrompt();S.copiedMap=new Map(S.idMap);const el=$(t.dataset.copy),lab=t.textContent,done=()=>{t.textContent="Copied";setTimeout(()=>t.textContent=lab,1500)};
+    try{navigator.clipboard.writeText(el.value).then(done,()=>{el.focus();el.select()})}catch(_){el.focus();el.select()}return}
+  if(t.dataset.rm){const k=t.dataset.rm;S[k]=[];delete S.loaded[k];if(k==="ads"){S.recs=null;S.edit.clear()}
+    indexAssets();refresh();S.expanded.clear();S.sel=null;buildMs();$("file").value="";showStatus();$("view").innerHTML="";return render()}
+  const act=t.dataset.act;if(!act)return;
+  if(act==="more"){S.limit+=30;return draw()}
+  if(act==="allyes"||act==="allno"){S.ads.forEach(a=>{const ids=new Set([...a.h,...a.d].filter(x=>x.sug).map(x=>x.sug.id));ids.forEach(id=>resolve(a,id,act==="allyes"))});return render()}
+  if(act==="yes"||act==="no"){const a=S.ads.find(x=>x.id===+t.dataset.ad);resolve(a,+t.dataset.sug,act==="yes");mirror(a);return render()}
+  const ad=S.ads.find(a=>a.id===+t.dataset.ad),k=t.dataset.k,i=+t.dataset.i;
+  if(act==="edit"){S.edit.has(ad.id)?S.edit.delete(ad.id):S.edit.add(ad.id);return render()}
+  let focus=-1;const x=ad[k][i];
+  if(act==="add"&&kept(ad[k]).length<(k==="h"?HCAP:DCAP)){ad[k].push({text:"",pin:"",origPin:""});focus=ad[k].length-1}
+  if(act==="cut")x.cut=true;
+  if(act==="undo"){delete x.cut;x.text=x.orig}
+  if(act==="delnew")ad[k].splice(i,1);
+  mirror(ad);render();
+  if(focus>=0){const el=$(`t-${ad.id}-${k}-${focus}`);if(el)el.focus()}
+});
+document.addEventListener("toggle",e=>{if(e.target.id==="dCopilot")fillPrompt()},true);
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.classList.contains("ln")){const k=t.dataset.k,max=k==="h"?HMAX:DMAX;S.ads.find(a=>a.id===+t.dataset.ad)[k][+t.dataset.i].text=t.value;
+    const c=t.closest(".asset").querySelector(".cnt");c.textContent=t.value.length+"/"+max;c.classList.toggle("over",t.value.length>max)}
+  if(t.id==="fQ"){S.q=t.value.trim();S.limit=30;draw()}
+  if(t.id==="msSearch"){const q=t.value.trim().toLowerCase();document.querySelectorAll("#msList .ms-item").forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q))}
+});
+document.addEventListener("change",async e=>{
+  const t=e.target;
+  if(t.classList.contains("ln")){const ad=S.ads.find(a=>a.id===+t.dataset.ad);ad[t.dataset.k][+t.dataset.i].text=norm(t.value);mirror(ad);return render()}
+  if(t.id==="fScope"){S.scope=t.value;return render()}
+  if(t.id==="fStatus"){S.status=t.value;S.limit=30;return render()}
+  if(t.id==="g1"||t.id==="g2"){S[t.id]=t.value;S.expanded.clear();if(t.value==="custom")S.cgOpen=true;$("view").innerHTML="";return draw()}
+  if(t.closest("#msList")){S.limit=30;const names=campOrder();if(!S.sel)S.sel=new Set(names);t.checked?S.sel.add(t.value):S.sel.delete(t.value);if(S.sel.size===names.length)S.sel=null;return render()}
+  if(t.id==="fSort"){S.sort[S.tab]=t.value;return render()}
+  if(t.id==="fMetrics"){S.metrics=t.checked;return drawTree()}
+  if(t.id==="fDedupe"){S.dedupe=t.checked;S.limit=30;return render()}
+  if(t.id==="file")return loadFiles([...t.files]);
+});
+/* Google Ads' "Excel .csv" download is UTF-16 text with tabs, its plain ".csv" is UTF-8 with commas: read both as text, by byte-order mark */
+const readBook=f=>new Promise((res,rej)=>{const r=new FileReader();r.onerror=()=>rej(new Error("could not read file"));
+  r.onload=()=>{try{const b=new Uint8Array(r.result),enc=b[0]===0xFF&&b[1]===0xFE?"utf-16le":b[0]===0xFE&&b[1]===0xFF?"utf-16be":b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF?"utf-8":null;
+      const text=enc||/\.(csv|txt|tsv)$/i.test(f.name),wb=text?XLSX.read(new TextDecoder(enc||"utf-8").decode(r.result).replace(/^﻿/,""),{type:"string",raw:true}):XLSX.read(r.result,{type:"array"});
+      res(wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""})))}catch(e){rej(new Error("not a spreadsheet"))}};r.readAsArrayBuffer(f)});
+async function loadFiles(files){
+  if(!files.length)return;let ads=null,kws=null,assets=null,recs=null;const bad=[];
+  for(const f of files){
+    try{const sheets=await readBook(f),one=sheets[0];let got=false,x;
+      if((x=parseAdRows(one)).ads){ads=x.ads;got=true}
+      else if((x=parseAssetRows(one)).assets){assets=x.assets;got=true}
+      else if((x=parseKwRows(one)).kws&&!parseRecRows(one).recs){kws=x.kws;got=true}
+      if(!got)for(const sh of sheets){const r=parseRecRows(sh);if(r.recs){recs=(recs||[]).concat(r.recs);got=true}}
+      if(!got)bad.push(`⚠ ${f.name}: not an ad, asset or keyword report`)}
+    catch(err){bad.push(`⚠ ${f.name}: ${err.message}`)}}
+  if(ads||kws||assets){
+    if(S.isSample){S.ads=[];S.kws=[];S.assets=[];S.isSample=false;S.recs=null}
+    if(ads){S.ads=ads;S.ads.forEach((a,i)=>a.id=i);S.recs=null;S.edit.clear();S.loaded.ads=`✓ Ad report (${ads.length} ads)`}
+    if(kws){S.kws=kws;S.loaded.kws=`✓ Keyword report (${kws.length} keywords)`}
+    if(assets){S.assets=assets;S.loaded.assets=`✓ Asset report (${assets.length} rows)`}
+    indexAssets();refresh();S.expanded.clear();S.sel=null;S.q="";$("fQ").value="";buildMs();
+    if(!ads&&!S.ads.length)S.tab=assets?"assets":"kws"}
+  if(recs){if(S.ads.length&&!S.isSample){S.ads.forEach(a=>resolveAll(a));applyRecs(recs);bad.push(`✓ Suggestions file (${S.recs.n} matched, ${S.recs.miss.length} set aside)`);S.tab="ads"}else bad.push("⚠ Load the ad report before the suggestions file")}
+  showStatus(bad);$("view").innerHTML="";render();
+}
+function showStatus(notes){
+  const names={ads:"ad report",assets:"asset report",kws:"keyword report"};
+  const chips=["ads","assets","kws"].filter(k=>S.loaded[k]).map(k=>`<span class="file">${esc(S.loaded[k])}<button type="button" data-rm="${k}" aria-label="Remove ${names[k]}" title="Remove ${names[k]}">×</button></span>`);
+  $("status").innerHTML=chips.join("")+(notes||[]).map(n=>`<span>${esc(n)}</span>`).join("")||"Nothing uploaded yet.";
+}
+const resolveAll=a=>new Set([...a.h,...a.d].filter(x=>x.sug).map(x=>x.sug.id)).forEach(id=>resolve(a,id,false));
+function buildMs(){$("msSearch").value="";$("msList").innerHTML=campOrder().map(c=>`<label class="ms-item"><input type="checkbox" value="${esc(c)}"${!S.sel||S.sel.has(c)?" checked":""}><span>${esc(c)}</span></label>`).join("")}
+if(typeof document!=="undefined"){sample();refresh();buildMs();render()}
+</script>
+
+</body></html>
