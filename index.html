@@ -2,6 +2,9 @@
 <title>Ad Copy Workbench</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Carlito:wght@400;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
 /* Layout: one upload line, three tabs. Ads = MLR QA Checker unit cards under a campaign heading. Tree = column cards + elbow wires, as in the Account Structure Tree. */
 :root{
@@ -86,6 +89,16 @@ dd.big{font-size:15px;font-weight:800}
 #fSort{max-width:112px}
 #fStatus{max-width:100px}
 #fQ{width:105px}
+.pdfroot{position:fixed;left:-12000px;top:0;width:1180px;color-scheme:light;
+  --paper:#ffffff;--surface:#f3f5f8;--sunk:#e9edf2;--ink:#131a24;--ink-2:#4b5766;--ink-3:#7c8797;--rule:#d9dfe7;--rule-2:#c3ccd8;
+  --indigo:#2b4b8c;--indigo-soft:#eaeffa;--ok:#0f7b55;--ok-bg:#e4f3ec;--bad:#b0261c;--bad-bg:#fbe3e1;--soft:#8f5d00;--soft-bg:#fbf0d6;--mute:#4b5766;--mute-bg:#eef1f5;color:var(--ink)}
+.pdfblock{background:var(--surface);padding:2px 2px 4px}
+.pdfroot .data th:first-child,.pdfroot .data td:first-child{width:auto;min-width:300px}
+.pdfroot .unit{margin-bottom:0}.pdfroot .asset .txt{white-space:normal;overflow:visible;padding:3px 0}
+.expwrap{position:relative}
+.expmenu{position:absolute;right:0;top:calc(100% + 4px);z-index:40;background:var(--paper);border:1px solid var(--rule-2);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.16);display:flex;flex-direction:column;min-width:140px;padding:4px}
+.expmenu button{appearance:none;border:0;background:none;text-align:left;font-size:12px;padding:6px 10px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.expmenu button:hover{background:var(--surface)}
 #selSlot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}#selSlot:empty{display:none}
 .data th:first-child,.data td:first-child{width:1%}
 .data input.pick{width:15px;height:15px;margin:0;cursor:pointer}
@@ -239,7 +252,7 @@ function openSheet(rows,test){
   const head=rows[hi].map(c=>norm(c).toLowerCase());
   const col=name=>head.reduce((a,h,i)=>(h===name&&a.push(i),a),[]);
   const get=(r,...names)=>{for(const n of names)for(const i of col(n))if(!blank(r[i]))return r[i];return ""};
-  return {head,get,body:rows.slice(hi+1),has:(...n)=>n.some(x=>head.includes(x))};
+  return {head,get,body:rows.slice(hi+1),has:(...n)=>n.some(x=>head.includes(x)),range:rows.slice(0,hi).map(r=>norm(r[0])).find(x=>/\d{4}/.test(x))||""};
 }
 function parseAdRows(rows){
   const s=openSheet(rows,l=>l.includes("campaign")&&l.includes("ad group"));
@@ -259,7 +272,7 @@ function parseAdRows(rows){
       clicks,cost:num(get(r,"cost"))||0,impr:im!=null?im:(ctr?clicks/ctr:0),
       conv:blank(conv)?null:num(conv),value:blank(val)?null:num(val),h,d});
   });
-  return ads.length?{ads,head:s.head}:{error:"No ads found under the header row.",head:s.head};
+  return ads.length?{ads,head:s.head,range:s.range}:{error:"No ads found under the header row.",head:s.head};
 }
 const bareKw=k=>norm(String(k).replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g,"").replace(/\+/g,""));
 function parseKwRows(rows){
@@ -440,14 +453,28 @@ function flagFor(t,campaign){
   const d=(v-g)/g;return d>.1?["ok","Above campaign"]:d<-.1?["bad","Below campaign"]:["mute",""];
 }
 
-function lineRow(ad,k,i,ed){
+function cardHtml(card,c,print){
+  const ad=card.lead,f=flagFor(card.t,c),ed=!print&&S.edit.has(ad.id),str=worstStr(card.ads);
+  const rows=k=>{let n=0;return ad[k].map((x,i)=>print&&(x.sug||!norm(x.text))?"":lineRow(ad,k,i,ed,++n)).join("")};
+  return `<div class="unit"><div class="colhead"><div>${print?"Ad":`<label class="pickl">${pickBox("ads",card.ads.map(a=>String(a.id)),"Select this ad")} Ad</label>`}</div><div>Headlines <span>${kept(ad.h).length}/${HCAP}</span></div><div>Descriptions <span>${kept(ad.d).length}/${DCAP}</span></div></div>
+      <div class="adrow"><div class="idcell"><div class="who">${esc(card.name)}</div>
+        <dl><dt>Ad strength</dt><dd><span class="flag str ${strCls(str)}">${esc(str)}</span></dd>
+        <dt>CTR</dt><dd class="big">${pct(ctr(card.t))} ${f[1]?`<span class="flag ${f[0]}">${f[1]}</span>`:""}</dd>
+        ${card.ads.length>1?card.ads.map(a=>`<dt>${esc(matchOf(a.group)||a.group)}</dt><dd>${pct(ctr(a))} CTR</dd>`).join(""):""}
+        <dt>Clicks</dt><dd>${n0(card.t.clicks)}</dd><dt>Cost</dt><dd>${usd(card.t.cost)}</dd><dt>Avg. CPC</dt><dd>${usd(cpc(card.t))}</dd></dl>
+        ${(()=>{const t=[...new Set(card.ads.flatMap(a=>(a.tips||"").split(";").map(norm)).filter(Boolean))];return t.length?`<div class="tips"><b>Ad strength improvements</b><ul>${t.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""})()}
+        ${print?"":`<button class="btn${ed?" on":""}" data-act="edit" data-ad="${ad.id}">${ed?"Done editing":"Edit copy"}</button>`}</div>
+      ${["h","d"].map(k=>`<div class="assetcol" data-label="${k==="h"?"Headlines":"Descriptions"}">${rows(k)}${ed?`<div class="addrow"><button class="btn" data-act="add" data-ad="${ad.id}" data-k="${k}"${kept(ad[k]).length>=(k==="h"?HCAP:DCAP)?" disabled":""}>Add ${k==="h"?"headline":"description"}</button></div>`:""}</div>`).join("")}
+      </div></div>`;
+}
+function lineRow(ad,k,i,ed,num){
   const x=ad[k][i],max=k==="h"?HMAX:DMAX,st=lineState(x),len=x.text.length,at=`data-ad="${ad.id}" data-k="${k}" data-i="${i}"`,sg=x.sug;
   let cls=st==="cut"?"cut":st?"soft":"live",vd=st==="cut"?"Crossed out":st==="new"?"New":st==="edited"?"Edited":"In engine";
   if(sg){cls="sug";vd=sg.kind==="add"?(len>max?"Suggested · too long":"Suggested"):"Suggested: remove"}
   const text=ed&&st!=="cut"&&!sg?`<input type="text" class="ln" id="t-${ad.id}-${k}-${i}" ${at} value="${esc(x.text)}" aria-label="Line text">`:esc(x.text);
   const tool=sg?`<button class="btn" data-act="yes" data-ad="${ad.id}" data-sug="${sg.id}">Accept</button><button class="btn" data-act="no" data-ad="${ad.id}" data-sug="${sg.id}">Reject</button>`
     :!ed?"":st==="new"?`<button class="btn" data-act="delnew" ${at}>Delete</button>`:st?`<button class="btn" data-act="undo" ${at}>Undo</button>`:`<button class="btn" data-act="cut" ${at}>Cross out</button>`;
-  return `<div class="asset ${cls}" title="${sg?esc(sg.reason||"No reason given"):st==="edited"?"In engine: "+esc(x.orig):""}"><div class="n">${i+1}</div><div class="txt">${text}</div><div class="side">${(()=>{const a=live(x)&&!sg?assetStat(ad,k,x.orig):null;return a?`<span class="flag ${vsAvg(ctr(a),S.aIdx.avg[k],a.clicks)}" title="This asset's own CTR from the asset report (${n0(a.impr)} impr.)">${pct(ctr(a))}</span>`:""})()}<span class="vd">${vd}</span>${x.pin?`<span>Pin ${x.pin}</span>`:""}${st==="cut"?"":`<span class="cnt${len>max?" over":""}">${len}/${max}</span>`}${tool}</div></div>`;
+  return `<div class="asset ${cls}" title="${sg?esc(sg.reason||"No reason given"):st==="edited"?"In engine: "+esc(x.orig):""}"><div class="n">${num||i+1}</div><div class="txt">${text}</div><div class="side">${(()=>{const a=live(x)&&!sg?assetStat(ad,k,x.orig):null;return a?`<span class="flag ${vsAvg(ctr(a),S.aIdx.avg[k],a.clicks)}" title="This asset's own CTR from the asset report (${n0(a.impr)} impr.)">${pct(ctr(a))}</span>`:""})()}<span class="vd">${vd}</span>${x.pin?`<span>Pin ${x.pin}</span>`:""}${st==="cut"?"":`<span class="cnt${len>max?" over":""}">${len}/${max}</span>`}${tool}</div></div>`;
 }
 function viewAds(){
   const ads=visAds();S.groups=new Map();
@@ -464,16 +491,7 @@ function viewAds(){
     const mine=byC.get(c),cs=cards(mine);total+=cs.length;if(shown>=S.limit)return;const t=sum(mine);
     out+=`<div class="blockhead">${esc(c)}<span>${usd(t.cost)} · ${n0(t.clicks)} clicks · CTR ${pct(ctr(t))}</span></div>`;
     cs.sort((a,b)=>hasSug(a.lead)-hasSug(b.lead)||key(a)-key(b)).forEach(card=>{if(shown>=S.limit)return;shown++;const ad=card.lead,f=flagFor(card.t,c),ed=S.edit.has(ad.id),str=worstStr(card.ads);S.groups.set(ad.id,card.ads);
-      out+=`<div class="unit"><div class="colhead"><div><label class="pickl">${pickBox("ads",card.ads.map(a=>String(a.id)),"Select this ad")} Ad</label></div><div>Headlines <span>${kept(ad.h).length}/${HCAP}</span></div><div>Descriptions <span>${kept(ad.d).length}/${DCAP}</span></div></div>
-      <div class="adrow"><div class="idcell"><div class="who">${esc(card.name)}</div>
-        <dl><dt>Ad strength</dt><dd><span class="flag str ${strCls(str)}">${esc(str)}</span></dd>
-        <dt>CTR</dt><dd class="big">${pct(ctr(card.t))} ${f[1]?`<span class="flag ${f[0]}">${f[1]}</span>`:""}</dd>
-        ${card.ads.length>1?card.ads.map(a=>`<dt>${esc(matchOf(a.group)||a.group)}</dt><dd>${pct(ctr(a))} CTR</dd>`).join(""):""}
-        <dt>Clicks</dt><dd>${n0(card.t.clicks)}</dd><dt>Cost</dt><dd>${usd(card.t.cost)}</dd><dt>Avg. CPC</dt><dd>${usd(cpc(card.t))}</dd></dl>
-        ${(()=>{const t=[...new Set(card.ads.flatMap(a=>(a.tips||"").split(";").map(norm)).filter(Boolean))];return t.length?`<div class="tips"><b>Ad strength improvements</b><ul>${t.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""})()}
-        <button class="btn${ed?" on":""}" data-act="edit" data-ad="${ad.id}">${ed?"Done editing":"Edit copy"}</button></div>
-      ${["h","d"].map(k=>`<div class="assetcol" data-label="${k==="h"?"Headlines":"Descriptions"}">${ad[k].map((_,i)=>lineRow(ad,k,i,ed)).join("")}${ed?`<div class="addrow"><button class="btn" data-act="add" data-ad="${ad.id}" data-k="${k}"${kept(ad[k]).length>=(k==="h"?HCAP:DCAP)?" disabled":""}>Add ${k==="h"?"headline":"description"}</button></div>`:""}</div>`).join("")}
-      </div></div>`})});
+      out+=cardHtml(card,c,false)})});
   if(total>shown)out+=`<div style="text-align:center;margin:14px 0"><button class="btn pri" data-act="more">Show 30 more (${total-shown} of ${total} left)</button></div>`;
   return out;
 }
@@ -665,7 +683,7 @@ function selBar(){
   if(S.tab==="map")return "";
   const n={ads:S.pick.ads.size,assets:S.pick.assets.size,kws:S.pick.kws.size},any=n.ads+n.assets+n.kws;
   const parts=[n.ads&&`${n.ads} ad${n.ads>1?"s":""}`,n.assets&&`${new Set(S.pick.assets).size} asset${n.assets>1?"s":""}`,n.kws&&`${n.kws} keyword${n.kws>1?"s":""}`].filter(Boolean);
-  return `<button class="btn" data-act="selall">Select all</button>${any?`<button class="btn pri" data-act="selx" title="Export ${parts.join(", ")} to Excel">Export (${any})</button><button class="btn" data-act="selclr">Clear</button>`:""}<span id="selMsg" class="hint"></span>`;
+  return `<button class="btn" data-act="selall">Select all</button>${any?`<span class="expwrap"><button class="btn pri" data-act="selmenu" title="Export ${parts.join(", ")}" aria-expanded="${!!S.expMenu}">Export (${any}) ▾</button>${S.expMenu?`<span class="expmenu"><button data-act="selx">Excel (.xlsx)</button><button data-act="selpdf">PDF</button></span>`:""}</span><button class="btn" data-act="selclr">Clear</button>`:""}<span id="selMsg" class="hint"></span>`;
 }
 function selectedBook(){
   const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);
@@ -682,9 +700,41 @@ function selectedBook(){
     ...kws.map(k=>[k.campaign,k.group,k.kw,k.match,k.qsNow??"",k.qsHist??"",k.qsDelta??"",r4(ctr(k)),r2(cpc(k)),k.clicks,r2(k.cost)])]);
   return wb;
 }
-async function saveBook(wb,name,msg){
+/* ---- PDF: the same cards and tables the page shows, drawn in the light theme and placed on landscape pages ---- */
+async function buildPdf(){
+  if(!window.jspdf||!window.html2canvas)throw new Error("lib");
+  const root=document.createElement("div");root.className="pdfroot";document.body.append(root);
+  const blocks=[],q=S.groups;
+  blocks.push(`<div class="masthead" style="margin:0"><h1>Ad Copy Review</h1><p>${esc([S.range&&"Reporting period: "+S.range,"Prepared "+new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"})].filter(Boolean).join(" · "))}</p></div>`);
+  const ads=S.ads.filter(a=>S.pick.ads.has(String(a.id)));
+  if(ads.length){const order=campOrder(),byC=new Map();ads.forEach(a=>(byC.get(a.campaign)||byC.set(a.campaign,[]).get(a.campaign)).push(a));
+    S.groups=new Map();
+    [...byC.keys()].sort((x,y)=>order.indexOf(x)-order.indexOf(y)).forEach(c=>{const mine=byC.get(c),t=sum(mine);let first=true;
+      cards(mine).forEach(card=>{S.groups.set(card.lead.id,card.ads);
+        blocks.push((first?`<div class="blockhead" style="margin-top:0">${esc(c)}<span>${usd(t.cost)} · ${n0(t.clicks)} clicks · CTR ${pct(ctr(t))}</span></div>`:"")+cardHtml(card,c,true));first=false})})}
+  const chunk=(title,head,rows)=>{for(let i=0;i<rows.length;i+=22)blocks.push(`${i?"":`<div class="blockhead" style="margin-top:0">${title}</div>`}<div class="scroll"><table class="data kw" style="min-width:0"><thead><tr>${head}</tr></thead><tbody>${rows.slice(i,i+22).join("")}</tbody></table></div>`)};
+  if(S.pick.assets.size){const m=new Map();S.assets.filter(a=>S.pick.assets.has(akey(a))).forEach(a=>{const k=akey(a),e=m.get(k)||{text:a.text,k:a.k,impr:0,clicks:0,cost:0,n:0};e.impr+=a.impr;e.clicks+=a.clicks;e.cost+=a.cost;e.n+=a.used||1;m.set(k,e)});
+    chunk("Assets",`<th>Asset</th><th>Type</th><th class="r">CTR</th><th class="r">Impr.</th><th class="r">Clicks</th><th class="r">Cost</th><th class="r">Avg. CPC</th><th class="r">Used by</th>`,
+      [...m.values()].sort((a,b)=>b.impr-a.impr).map(a=>`<tr><td style="white-space:normal">${esc(a.text)}</td><td>${a.k==="h"?"Headline":"Description"}</td><td class="r hot"><span class="flag ${vsAvg(ctr(a),S.aIdx.avg[a.k],a.clicks)}">${pct(ctr(a))}</span></td><td class="r">${n0(a.impr)}</td><td class="r">${n0(a.clicks)}</td><td class="r">${a.cost?usd(a.cost):"–"}</td><td class="r">${a.cost?usd(cpc(a)):"–"}</td><td class="r">${a.n}</td></tr>`))}
+  const kws=S.kws.filter(k=>S.pick.kws.has(pk(k)));
+  if(kws.length){const avg=ctr(sum(S.kws));
+    chunk("Keywords",`<th>Keyword</th><th>Match type</th><th>Campaign</th><th>Ad group</th><th class="r">Quality Score</th><th class="r">QS (hist.)</th><th class="r">CTR</th><th class="r">Avg. CPC</th><th class="r">Clicks</th><th class="r">Cost</th>`,
+      kws.map(k=>`<tr><td><b>${esc(k.kw)}</b></td><td>${esc(k.match)}</td><td>${esc(k.campaign)}</td><td>${esc(k.group)}</td><td class="r"><span class="flag str ${qsCls(k.qsNow)}">${k.qsNow??"–"}</span></td><td class="r">${k.qsHist??"–"}</td><td class="r hot"><span class="flag ${vsAvg(ctr(k),avg,k.clicks)}">${pct(ctr(k))}</span></td><td class="r">${usd(cpc(k))}</td><td class="r">${n0(k.clicks)}</td><td class="r">${usd(k.cost)}</td></tr>`))}
+  S.groups=q;
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:"landscape",unit:"pt",format:"letter"}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=24,CW=W-2*M;
+  const bg=()=>{doc.setFillColor(243,245,248);doc.rect(0,0,W,H,"F")};bg();let y=M;
+  try{for(const html of blocks){root.innerHTML=`<div class="pdfblock">${html}</div>`;
+      const cv=await html2canvas(root.firstElementChild,{scale:2,backgroundColor:"#f3f5f8",logging:false});
+      let w=CW,h=cv.height*CW/cv.width;if(h>H-2*M){h=H-2*M;w=cv.width*h/cv.height}
+      if(y+h>H-M){doc.addPage();bg();y=M}
+      doc.addImage(cv.toDataURL("image/jpeg",.92),"JPEG",M,y,w,h);y+=h+10}}
+  finally{root.remove()}
+  const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(124,135,151);doc.text(`Page ${i} of ${n}`,W-M,H-10,{align:"right"})}
+  return doc;
+}
+async function saveBook(wb,name,msg,pdf){
   let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(_){}
-  try{if(dl){await dl.save({filename:name,data:XLSX.write(wb,{type:"array",bookType:"xlsx"})});msg.textContent="Saved."}else{XLSX.writeFile(wb,name);msg.textContent="Download started."}}
+  try{if(dl){await dl.save({filename:name,data:pdf?pdf.output("arraybuffer"):XLSX.write(wb,{type:"array",bookType:"xlsx"})});msg.textContent="Saved."}else{pdf?pdf.save(name):XLSX.writeFile(wb,name);msg.textContent="Download started."}}
   catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"The download did not go through."}
 }
 async function downloadXlsx(){
@@ -712,6 +762,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 function mirror(ad){(S.groups.get(ad.id)||[]).forEach(o=>{if(o!==ad){o.h=clone(ad.h);o.d=clone(ad.d)}})}
 document.addEventListener("click",e=>{
   if(!e.target.closest(".ms"))$("msPanel").hidden=true;
+  if(S.expMenu&&!e.target.closest(".expwrap")){S.expMenu=false;$("selSlot").innerHTML=selBar()}
   if(e.target.closest("#msBtn")){$("msPanel").hidden=!$("msPanel").hidden;if(!$("msPanel").hidden)$("msSearch").focus();return}
   if(e.target.id==="msAll"||e.target.id==="msNone"){S.sel=e.target.id==="msAll"?null:new Set();buildMs();return render()}
   const th=e.target.closest("th[data-sort]");
@@ -741,7 +792,10 @@ document.addEventListener("click",e=>{
   if(act==="more"){S.limit+=30;return draw()}
   if(act==="selall"){const kind=S.tab==="kws"?"kws":S.tab==="assets"?"assets":"ads";shownKeys(kind).forEach(k=>S.pick[kind].add(k));return draw()}
   if(act==="selclr"){Object.values(S.pick).forEach(x=>x.clear());return draw()}
-  if(act==="selx"){let wb;try{wb=selectedBook()}catch(e){$("selMsg").textContent="Could not build the file.";return}return saveBook(wb,"selected-export.xlsx",$("selMsg"))}
+  if(act==="selmenu"){S.expMenu=!S.expMenu;return draw()}
+  if(act==="selpdf"){S.expMenu=false;draw();$("selMsg").textContent="Building PDF…";
+    buildPdf().then(doc=>saveBook(null,"ad-copy-review.pdf",$("selMsg"),doc),e=>{$("selMsg").textContent=e&&e.message==="lib"?"The PDF tools did not load. Reload the page and try again.":"Could not build the PDF."});return}
+  if(act==="selx"){S.expMenu=false;draw();let wb;try{wb=selectedBook()}catch(e){$("selMsg").textContent="Could not build the file.";return}return saveBook(wb,"selected-export.xlsx",$("selMsg"))}
   if(act==="allyes"||act==="allno"){S.ads.forEach(a=>{const ids=new Set([...a.h,...a.d].filter(x=>x.sug).map(x=>x.sug.id));ids.forEach(id=>resolve(a,id,act==="allyes"))});return render()}
   if(act==="yes"||act==="no"){const a=S.ads.find(x=>x.id===+t.dataset.ad);resolve(a,+t.dataset.sug,act==="yes");mirror(a);return render()}
   const ad=S.ads.find(a=>a.id===+t.dataset.ad),k=t.dataset.k,i=+t.dataset.i;
@@ -781,10 +835,10 @@ const readBook=f=>new Promise((res,rej)=>{const r=new FileReader();r.onerror=()=
       const text=enc||/\.(csv|txt|tsv)$/i.test(f.name),wb=text?XLSX.read(new TextDecoder(enc||"utf-8").decode(r.result).replace(/^﻿/,""),{type:"string",raw:true}):XLSX.read(r.result,{type:"array"});
       res(wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:""})))}catch(e){rej(new Error("not a spreadsheet"))}};r.readAsArrayBuffer(f)});
 async function loadFiles(files){
-  if(!files.length)return;let ads=null,kws=null,assets=null,recs=null;const bad=[];
+  if(!files.length)return;let x0={},ads=null,kws=null,assets=null,recs=null;const bad=[];
   for(const f of files){
     try{const sheets=await readBook(f),one=sheets[0];let got=false,x;
-      if((x=parseAdRows(one)).ads){ads=x.ads;got=true}
+      if((x=parseAdRows(one)).ads){ads=x.ads;x0=x;got=true}
       else if((x=parseAssetRows(one)).assets){assets=x.assets;got=true}
       else if((x=parseKwRows(one)).kws&&!parseRecRows(one).recs){kws=x.kws;got=true}
       if(!got)for(const sh of sheets){const r=parseRecRows(sh);if(r.recs){recs=(recs||[]).concat(r.recs);got=true}}
@@ -792,7 +846,7 @@ async function loadFiles(files){
     catch(err){bad.push(`⚠ ${f.name}: ${err.message}`)}}
   if(ads||kws||assets){
     if(S.isSample){S.ads=[];S.kws=[];S.assets=[];S.isSample=false;S.recs=null}
-    if(ads){S.ads=ads;S.ads.forEach((a,i)=>a.id=i);S.recs=null;S.edit.clear();S.loaded.ads=`✓ Ad report (${ads.length} ads)`}
+    if(ads){S.range=x0.range||"";S.ads=ads;S.ads.forEach((a,i)=>a.id=i);S.recs=null;S.edit.clear();S.loaded.ads=`✓ Ad report (${ads.length} ads)`}
     if(kws){S.kws=kws;S.loaded.kws=`✓ Keyword report (${kws.length} keywords)`}
     if(assets){S.assets=assets;S.loaded.assets=`✓ Asset report (${assets.length} rows)`}
     if(ads)S.pick.ads.clear();if(kws)S.pick.kws.clear();if(assets)S.pick.assets.clear();indexAssets();refresh();S.expanded.clear();S.sel=null;S.q="";$("fQ").value="";buildMs();
