@@ -47,9 +47,9 @@ select,input[type=text]{font-size:12px;padding:4px 7px;border:1px solid var(--ru
 .file button{appearance:none;border:0;background:none;color:inherit;font-size:16px;line-height:1;cursor:pointer;padding:0 6px;border-radius:20px}
 .file button:hover{background:var(--paper)}
 .toolbar{display:flex;flex-wrap:wrap;gap:0 16px;align-items:center;border-bottom:1px solid var(--rule);margin-bottom:12px}
-.tab{appearance:none;border:0;background:none;font-size:13px;font-weight:600;color:var(--ink-3);padding:10px 4px 8px;margin-right:10px;cursor:pointer;border-bottom:3px solid transparent}
+.tab{appearance:none;border:0;background:none;font-size:13px;font-weight:600;color:var(--ink-3);padding:10px 4px 8px;margin-right:4px;cursor:pointer;border-bottom:3px solid transparent}
 .tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--indigo)}
-.filters{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:6px 0;font-size:11.5px;color:var(--ink-2)}
+.filters{flex:1 1 auto;justify-content:flex-end;margin-left:auto;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:6px 0;font-size:11.5px;color:var(--ink-2)}
 .filters label{display:flex;align-items:center;gap:5px}
 .blockhead{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:12.5px;font-weight:700;padding-bottom:6px;border-bottom:2px solid var(--ink);margin:18px 0 10px;overflow-wrap:anywhere}
 .blockhead span{font-weight:500;color:var(--ink-2);font-size:11.5px;font-variant-numeric:tabular-nums}
@@ -81,7 +81,12 @@ dd.big{font-size:15px;font-weight:800}
 .asset .side{padding-right:8px;font-size:10.5px;display:flex;align-items:center;gap:6px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .asset .vd{font-weight:700}
 .selbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
-.pickl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);margin-bottom:5px;cursor:pointer}
+.pickl{display:flex;align-items:center;gap:6px;cursor:pointer}
+.pickl input{margin:0;width:14px;height:14px}
+#fSort{max-width:112px}
+#fStatus{max-width:100px}
+#fQ{width:105px}
+#selSlot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}#selSlot:empty{display:none}
 .data th:first-child,.data td:first-child{width:1%}
 .data input.pick{width:15px;height:15px;margin:0;cursor:pointer}
 .assetcol[data-label="Descriptions"] .asset .txt{white-space:normal;overflow:visible;padding:4px 0}
@@ -136,7 +141,7 @@ table.data{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 .nd.b .t .tx{font-weight:600}
 .gsel{display:flex;align-items:center;gap:5px;color:var(--ink)}
 .ms{position:relative}
-.ms-btn{background:var(--paper);border:1px solid var(--rule-2);border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;min-width:190px;display:flex;justify-content:space-between;gap:8px}
+.ms-btn{background:var(--paper);border:1px solid var(--rule-2);border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;min-width:120px;display:flex;justify-content:space-between;gap:8px}
 .ms-panel{position:absolute;z-index:50;top:calc(100% + 4px);right:0;background:var(--paper);border:1px solid var(--rule-2);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);width:min(430px,calc(100vw - 40px));max-height:340px;overflow:auto;padding:8px}
 .ms-panel input[type=text]{width:100%;margin-bottom:6px}
 .ms-actions{display:flex;gap:14px;padding:2px 4px 6px;border-bottom:1px solid var(--rule);margin-bottom:6px}
@@ -192,7 +197,8 @@ textarea{width:100%;min-height:150px;font:12px/1.4 ui-monospace,Menlo,Consolas,m
         <div class="ms-panel" id="msPanel" hidden><input type="text" id="msSearch" placeholder="Search campaigns…" aria-label="Search campaigns"><div class="ms-actions"><button type="button" id="msAll">Select all</button><button type="button" id="msNone">Clear all</button></div><div id="msList"></div></div></div>
       <label>Status <select id="fStatus"><option value="all">All</option><option value="active">Active only</option><option value="inactive">Paused only</option></select></label>
       <label id="lSort">Sort <select id="fSort"></select></label>
-      <label>Contains <input type="text" id="fQ" style="width:110px"></label>
+      <input type="text" id="fQ" placeholder="Search text" aria-label="Search text">
+      <span id="selSlot"></span>
     </div>
   </div>
 
@@ -458,8 +464,8 @@ function viewAds(){
     const mine=byC.get(c),cs=cards(mine);total+=cs.length;if(shown>=S.limit)return;const t=sum(mine);
     out+=`<div class="blockhead">${esc(c)}<span>${usd(t.cost)} · ${n0(t.clicks)} clicks · CTR ${pct(ctr(t))}</span></div>`;
     cs.sort((a,b)=>hasSug(a.lead)-hasSug(b.lead)||key(a)-key(b)).forEach(card=>{if(shown>=S.limit)return;shown++;const ad=card.lead,f=flagFor(card.t,c),ed=S.edit.has(ad.id),str=worstStr(card.ads);S.groups.set(ad.id,card.ads);
-      out+=`<div class="unit"><div class="colhead"><div>Ad</div><div>Headlines <span>${kept(ad.h).length}/${HCAP}</span></div><div>Descriptions <span>${kept(ad.d).length}/${DCAP}</span></div></div>
-      <div class="adrow"><div class="idcell"><label class="pickl">${pickBox("ads",card.ads.map(a=>String(a.id)),"Select this ad")} Select</label><div class="who">${esc(card.name)}</div>
+      out+=`<div class="unit"><div class="colhead"><div><label class="pickl">${pickBox("ads",card.ads.map(a=>String(a.id)),"Select this ad")} Ad</label></div><div>Headlines <span>${kept(ad.h).length}/${HCAP}</span></div><div>Descriptions <span>${kept(ad.d).length}/${DCAP}</span></div></div>
+      <div class="adrow"><div class="idcell"><div class="who">${esc(card.name)}</div>
         <dl><dt>Ad strength</dt><dd><span class="flag str ${strCls(str)}">${esc(str)}</span></dd>
         <dt>CTR</dt><dd class="big">${pct(ctr(card.t))} ${f[1]?`<span class="flag ${f[0]}">${f[1]}</span>`:""}</dd>
         ${card.ads.length>1?card.ads.map(a=>`<dt>${esc(matchOf(a.group)||a.group)}</dt><dd>${pct(ctr(a))} CTR</dd>`).join(""):""}
@@ -659,7 +665,7 @@ function selBar(){
   if(S.tab==="map")return "";
   const n={ads:S.pick.ads.size,assets:S.pick.assets.size,kws:S.pick.kws.size},any=n.ads+n.assets+n.kws;
   const parts=[n.ads&&`${n.ads} ad${n.ads>1?"s":""}`,n.assets&&`${new Set(S.pick.assets).size} asset${n.assets>1?"s":""}`,n.kws&&`${n.kws} keyword${n.kws>1?"s":""}`].filter(Boolean);
-  return `<div class="selbar">${any?`<span>${parts.join(" · ")} selected</span>`:""}<button class="btn" data-act="selall">Select all shown</button>${any?`<button class="btn pri" data-act="selx">Export selected (Excel)</button><button class="btn" data-act="selclr">Clear</button>`:""}<span id="selMsg" class="hint"></span></div>`;
+  return `<button class="btn" data-act="selall">Select all</button>${any?`<button class="btn pri" data-act="selx" title="Export ${parts.join(", ")} to Excel">Export (${any})</button><button class="btn" data-act="selclr">Clear</button>`:""}<span id="selMsg" class="hint"></span>`;
 }
 function selectedBook(){
   const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);
@@ -698,8 +704,9 @@ function render(){
   draw();fillPrompt();
 }
 function draw(){
+  $("selSlot").innerHTML=selBar();
   if(S.tab==="map"){if(!$("viewport"))$("view").innerHTML=viewMap();if($("viewport"))drawTree();return}
-  $("view").innerHTML=selBar()+(S.tab==="ads"?viewAds():S.tab==="assets"?viewAssets():viewKws());
+  $("view").innerHTML=(S.tab==="ads"?viewAds():S.tab==="assets"?viewAssets():viewKws());
 }
 const clone=x=>JSON.parse(JSON.stringify(x));
 function mirror(ad){(S.groups.get(ad.id)||[]).forEach(o=>{if(o!==ad){o.h=clone(ad.h);o.d=clone(ad.d)}})}
