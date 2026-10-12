@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Ad Copy Workbench</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Carlito:wght@400;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -80,6 +80,10 @@ dd.big{font-size:15px;font-weight:800}
 .asset .txt input{width:100%;font-family:var(--asset);font-size:12.5px;padding:2px 6px}
 .asset .side{padding-right:8px;font-size:10.5px;display:flex;align-items:center;gap:6px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .asset .vd{font-weight:700}
+.selbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
+.pickl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);margin-bottom:5px;cursor:pointer}
+.data th:first-child,.data td:first-child{width:1%}
+.data input.pick{width:15px;height:15px;margin:0;cursor:pointer}
 .assetcol[data-label="Descriptions"] .asset .txt{white-space:normal;overflow:visible;padding:4px 0}
 .tips{margin-top:9px;font-size:11px;color:var(--ink-2);line-height:1.35}.tips b{color:var(--ink);font-size:10.5px}.tips ul{margin:3px 0 0;padding-left:15px}
 .example{background:var(--soft-bg);color:var(--soft);border:1px dashed var(--soft);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;margin-bottom:10px}
@@ -352,7 +356,7 @@ const vsAvg=(v,avg,clicks)=>v==null||!avg||clicks<LOWVOL?"mute":(v-avg)/avg>.1?"
 
 const PAL=['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac'];
 const DIMS=[["brand","Brand"],["segment","Brand vs Non-brand vs Competitive"],["theme","Theme (from campaign name)"],["market","Market / tier"],["year","Year"],["channel","Channel / destination"]];
-const S={order:[],cstat:new Map(),limit:30,assets:[],aIdx:null,isSample:true,loaded:{},scope:"all",idMap:null,copiedMap:null,tab:"ads",sel:null,status:"all",g1:"",g2:"",cgOpen:false,custom:"Illness: illness, immunity, health\nCoupon: coupon\nProduct: grow & gain, protein, snack",recs:null,sort:{ads:"cost",kws:{col:"cost",dir:-1},assets:{col:"impr",dir:-1}},metrics:true,q:"",dedupe:true,edit:new Set(),ads:[],kws:[],groups:new Map(),expanded:new Map()};
+const S={pick:{ads:new Set(),assets:new Set(),kws:new Set()},order:[],cstat:new Map(),limit:30,assets:[],aIdx:null,isSample:true,loaded:{},scope:"all",idMap:null,copiedMap:null,tab:"ads",sel:null,status:"all",g1:"",g2:"",cgOpen:false,custom:"Illness: illness, immunity, health\nCoupon: coupon\nProduct: grow & gain, protein, snack",recs:null,sort:{ads:"cost",kws:{col:"cost",dir:-1},assets:{col:"impr",dir:-1}},metrics:true,q:"",dedupe:true,edit:new Set(),ads:[],kws:[],groups:new Map(),expanded:new Map()};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const n0=x=>Math.round(x||0).toLocaleString();
@@ -455,7 +459,7 @@ function viewAds(){
     out+=`<div class="blockhead">${esc(c)}<span>${usd(t.cost)} · ${n0(t.clicks)} clicks · CTR ${pct(ctr(t))}</span></div>`;
     cs.sort((a,b)=>hasSug(a.lead)-hasSug(b.lead)||key(a)-key(b)).forEach(card=>{if(shown>=S.limit)return;shown++;const ad=card.lead,f=flagFor(card.t,c),ed=S.edit.has(ad.id),str=worstStr(card.ads);S.groups.set(ad.id,card.ads);
       out+=`<div class="unit"><div class="colhead"><div>Ad</div><div>Headlines <span>${kept(ad.h).length}/${HCAP}</span></div><div>Descriptions <span>${kept(ad.d).length}/${DCAP}</span></div></div>
-      <div class="adrow"><div class="idcell"><div class="who">${esc(card.name)}</div>
+      <div class="adrow"><div class="idcell"><label class="pickl">${pickBox("ads",card.ads.map(a=>String(a.id)),"Select this ad")} Select</label><div class="who">${esc(card.name)}</div>
         <dl><dt>Ad strength</dt><dd><span class="flag str ${strCls(str)}">${esc(str)}</span></dd>
         <dt>CTR</dt><dd class="big">${pct(ctr(card.t))} ${f[1]?`<span class="flag ${f[0]}">${f[1]}</span>`:""}</dd>
         ${card.ads.length>1?card.ads.map(a=>`<dt>${esc(matchOf(a.group)||a.group)}</dt><dd>${pct(ctr(a))} CTR</dd>`).join(""):""}
@@ -483,8 +487,9 @@ function viewKws(){
   const rows=kwRows(visKws()).sort((a,b)=>{const x=fn(a),y=fn(b);if(x==null||x==="")return 1;if(y==null||y==="")return -1;return (x<y?-1:x>y?1:0)*so.dir});
   if(!rows.length)return `<div class="empty">No keywords match these filters.</div>`;
   const avg=ctr(sum(S.kws));
-  return `<div class="scroll"><table class="data kw"><thead><tr>${KCOLS.map(c=>`<th class="${c[2]?"r":""}" data-sort="${c[0]}" title="Sort by ${c[1]}">${c[1]}${so.col===c[0]?(so.dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(k=>{const d=k.qsDelta;
-    return `<tr><td><b>${esc(k.kw)}</b></td><td>${k.parts.length>1?k.parts.map(p=>`${p.match} ${pct(ctr(p))}`).join(" · "):esc(k.match)}</td><td>${esc(k.campaign)}</td><td>${esc(k.group)}</td>
+  const allK=rows.flatMap(r=>r.parts.map(pk));
+  return `<div class="scroll"><table class="data kw"><thead><tr><th>${pickBox("kws",allK,"Select all keywords shown")}</th>${KCOLS.map(c=>`<th class="${c[2]?"r":""}" data-sort="${c[0]}" title="Sort by ${c[1]}">${c[1]}${so.col===c[0]?(so.dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(k=>{const d=k.qsDelta;
+    return `<tr><td>${pickBox("kws",k.parts.map(pk),"Select "+k.kw)}</td><td><b>${esc(k.kw)}</b></td><td>${k.parts.length>1?k.parts.map(p=>`${p.match} ${pct(ctr(p))}`).join(" · "):esc(k.match)}</td><td>${esc(k.campaign)}</td><td>${esc(k.group)}</td>
     <td class="r"><span class="flag str ${qsCls(k.qsNow)}">${k.qsNow??"–"}</span></td><td class="r">${k.qsHist==null?"–":`<span class="flag ${qsCls(k.qsHist)}">${k.qsHist}</span>`}</td>
     <td class="r">${d==null||d===0?"–":`<span class="flag ${d>0?"ok":"bad"}">${d>0?"▲ +":"▼ "}${d}</span>`}</td>
     <td class="r hot"><span class="flag ${vsAvg(ctr(k),avg,k.clicks)}" title="Account average ${pct(avg)}">${pct(ctr(k))}</span></td><td class="r hot">${usd(cpc(k))}</td><td class="r">${n0(k.clicks)}</td><td class="r">${usd(k.cost)}</td></tr>`}).join("")}</tbody></table></div>`;
@@ -500,8 +505,9 @@ function viewAssets(){
   if(!rows.length)return `<div class="empty">No assets match these filters.</div>`;
   const lab=l=>l.includes("/")?"mute":/best/i.test(l)?"ok":/low/i.test(l)?"bad":/good/i.test(l)?"soft":"mute";
   const AC=S.assets.some(x=>x.label&&x.label!=="--")?ACOLS:ACOLS.slice(0,-1);
-  return `<div class="scroll"><table class="data kw"><thead><tr>${AC.map(c=>`<th class="${c[2]?"r":""}" data-sort="${c[0]}" title="Sort by ${c[1]}">${c[1]}${so.col===c[0]?(so.dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(a=>
-    `<tr><td style="white-space:normal;min-width:240px">${esc(a.text)}</td><td>${a.k==="h"?"Headline":"Description"}</td><td class="r hot"><span class="flag ${vsAvg(ctr(a),S.aIdx.avg[a.k],a.clicks)}" title="Average for ${a.k==="h"?"headlines":"descriptions"} ${pct(S.aIdx.avg[a.k])}">${pct(ctr(a))}</span></td><td class="r">${n0(a.impr)}</td><td class="r">${n0(a.clicks)}</td><td class="r">${a.cost?usd(a.cost):"–"}</td><td class="r">${a.cost?usd(cpc(a)):"–"}</td><td class="r">${a.n}</td>${AC===ACOLS?`<td>${a.label?`<span class="flag ${lab(a.label)}">${esc(a.label)}</span>`:"–"}</td>`:""}</tr>`).join("")}</tbody></table></div>`;
+  const allA=rows.map(akey);
+  return `<div class="scroll"><table class="data kw"><thead><tr><th>${pickBox("assets",allA,"Select all assets shown")}</th>${AC.map(c=>`<th class="${c[2]?"r":""}" data-sort="${c[0]}" title="Sort by ${c[1]}">${c[1]}${so.col===c[0]?(so.dir>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(a=>
+    `<tr><td>${pickBox("assets",[akey(a)],"Select asset")}</td><td style="white-space:normal;min-width:240px">${esc(a.text)}</td><td>${a.k==="h"?"Headline":"Description"}</td><td class="r hot"><span class="flag ${vsAvg(ctr(a),S.aIdx.avg[a.k],a.clicks)}" title="Average for ${a.k==="h"?"headlines":"descriptions"} ${pct(S.aIdx.avg[a.k])}">${pct(ctr(a))}</span></td><td class="r">${n0(a.impr)}</td><td class="r">${n0(a.clicks)}</td><td class="r">${a.cost?usd(a.cost):"–"}</td><td class="r">${a.cost?usd(cpc(a)):"–"}</td><td class="r">${a.n}</td>${AC===ACOLS?`<td>${a.label?`<span class="flag ${lab(a.label)}">${esc(a.label)}</span>`:"–"}</td>`:""}</tr>`).join("")}</tbody></table></div>`;
 }
 
 /* ---- campaign tree: columns of cards joined by elbow wires ---- */
@@ -639,6 +645,42 @@ A1 | D | Complete, balanced nutrition kids like. Order today. | Fills an open de
 ${sh.length?"\nLive headlines in EVERY ad group below:\n"+list(sh)+"\n":""}${sd.length?"\nLive descriptions in EVERY ad group below:\n"+list(sd)+"\n":""}
 ${blocks.join("\n\n")}`;
 }
+/* ---- picking rows to export ---- */
+const pk=p=>[p.campaign,p.group,p.kw,p.match].join("\u0001");
+const akey=a=>a.k+"\u0001"+a.text.toLowerCase();
+const isPicked=(kind,keys)=>keys.length>0&&keys.every(k=>S.pick[kind].has(k));
+const pickBox=(kind,keys,label)=>`<input type="checkbox" class="pick" data-kind="${kind}" data-key="${esc(keys.join("\u0002"))}"${isPicked(kind,keys)?" checked":""} aria-label="${esc(label)}">`;
+function shownKeys(kind){
+  if(kind==="ads")return visAds().map(a=>String(a.id));
+  if(kind==="kws")return visKws().map(pk);
+  const q=S.q.toLowerCase();return S.assets.filter(a=>(!S.sel||!a.campaign||S.sel.has(a.campaign))&&(!q||a.text.toLowerCase().includes(q))).map(akey);
+}
+function selBar(){
+  if(S.tab==="map")return "";
+  const n={ads:S.pick.ads.size,assets:S.pick.assets.size,kws:S.pick.kws.size},any=n.ads+n.assets+n.kws;
+  const parts=[n.ads&&`${n.ads} ad${n.ads>1?"s":""}`,n.assets&&`${new Set(S.pick.assets).size} asset${n.assets>1?"s":""}`,n.kws&&`${n.kws} keyword${n.kws>1?"s":""}`].filter(Boolean);
+  return `<div class="selbar">${any?`<span>${parts.join(" · ")} selected</span>`:""}<button class="btn" data-act="selall">Select all shown</button>${any?`<button class="btn pri" data-act="selx">Export selected (Excel)</button><button class="btn" data-act="selclr">Clear</button>`:""}<span id="selMsg" class="hint"></span></div>`;
+}
+function selectedBook(){
+  const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);
+  const r4=x=>x==null||!isFinite(x)?"":Math.round(x*10000)/10000,r2=x=>x==null||!isFinite(x)?"":Math.round(x*100)/100;
+  const ads=S.ads.filter(a=>S.pick.ads.has(String(a.id)));
+  if(ads.length){const head=["Campaign","Ad group","Ad type","Ad strength","CTR","Clicks","Cost","Avg. CPC","Ad strength improvements"];
+    for(let i=1;i<=HCAP;i++)head.push("Headline "+i,"Headline "+i+" position");for(let i=1;i<=DCAP;i++)head.push("Description "+i);head.push("Final URL");
+    add("Ads",[head,...ads.map(a=>{const h=kept(a.h),d=kept(a.d),r=[a.campaign,a.group,a.type||"",a.strength,r4(ctr(a)),a.clicks,r2(a.cost),r2(cpc(a)),(a.tips||"").split(";").map(norm).filter(Boolean).join("; ")];
+      for(let i=0;i<HCAP;i++)r.push(h[i]?h[i].text:"",h[i]?h[i].pin:"");for(let i=0;i<DCAP;i++)r.push(d[i]?d[i].text:"");r.push(a.url||"");return r})])}
+  if(S.pick.assets.size){const m=new Map();S.assets.filter(a=>S.pick.assets.has(akey(a))).forEach(a=>{const k=akey(a),e=m.get(k)||{text:a.text,k:a.k,impr:0,clicks:0,cost:0,n:0};e.impr+=a.impr;e.clicks+=a.clicks;e.cost+=a.cost;e.n+=a.used||1;m.set(k,e)});
+    add("Assets",[["Asset","Type","CTR","Impr.","Clicks","Cost","Avg. CPC","Used by"],...[...m.values()].map(a=>[a.text,a.k==="h"?"Headline":"Description",r4(ctr(a)),Math.round(a.impr),a.clicks,r2(a.cost),r2(cpc(a)),a.n])])}
+  const kws=S.kws.filter(k=>S.pick.kws.has(pk(k)));
+  if(kws.length)add("Keywords",[["Campaign","Ad group","Keyword","Match type","Quality Score","Quality Score (hist.)","QS change","CTR","Avg. CPC","Clicks","Cost"],
+    ...kws.map(k=>[k.campaign,k.group,k.kw,k.match,k.qsNow??"",k.qsHist??"",k.qsDelta??"",r4(ctr(k)),r2(cpc(k)),k.clicks,r2(k.cost)])]);
+  return wb;
+}
+async function saveBook(wb,name,msg){
+  let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(_){}
+  try{if(dl){await dl.save({filename:name,data:XLSX.write(wb,{type:"array",bookType:"xlsx"})});msg.textContent="Saved."}else{XLSX.writeFile(wb,name);msg.textContent="Download started."}}
+  catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"The download did not go through."}
+}
 async function downloadXlsx(){
   const msg=$("xMsg"),name="ad-copy-workbench.xlsx";let wb,dl=null;
   try{wb=buildWorkbook()}catch(e){msg.textContent="Could not build the workbook.";return}
@@ -657,7 +699,7 @@ function render(){
 }
 function draw(){
   if(S.tab==="map"){if(!$("viewport"))$("view").innerHTML=viewMap();if($("viewport"))drawTree();return}
-  $("view").innerHTML=(S.isSample?`<div class="example">EXAMPLE PLACEHOLDER. This is made-up data to show the layout. Upload a report above to replace it.</div>`:"")+(S.tab==="ads"?viewAds():S.tab==="assets"?viewAssets():viewKws());
+  $("view").innerHTML=selBar()+(S.tab==="ads"?viewAds():S.tab==="assets"?viewAssets():viewKws());
 }
 const clone=x=>JSON.parse(JSON.stringify(x));
 function mirror(ad){(S.groups.get(ad.id)||[]).forEach(o=>{if(o!==ad){o.h=clone(ad.h);o.d=clone(ad.d)}})}
@@ -686,10 +728,13 @@ document.addEventListener("click",e=>{
     S.ads.forEach(a=>resolveAll(a));applyRecs(recs);m.textContent=`Read ${recs.length} lines: ${S.recs.n} shown on the Ads tab, ${S.recs.miss.length} set aside.`;S.tab="ads";$("view").innerHTML="";render();window.scrollTo({top:0});return}
   if(t.dataset.copy){if(!S.idMap)fillPrompt();S.copiedMap=new Map(S.idMap);const el=$(t.dataset.copy),lab=t.textContent,done=()=>{t.textContent="Copied";setTimeout(()=>t.textContent=lab,1500)};
     try{navigator.clipboard.writeText(el.value).then(done,()=>{el.focus();el.select()})}catch(_){el.focus();el.select()}return}
-  if(t.dataset.rm){const k=t.dataset.rm;S[k]=[];delete S.loaded[k];if(k==="ads"){S.recs=null;S.edit.clear()}
+  if(t.dataset.rm){const k=t.dataset.rm;S[k]=[];S.pick[k].clear();delete S.loaded[k];if(k==="ads"){S.recs=null;S.edit.clear()}
     indexAssets();refresh();S.expanded.clear();S.sel=null;buildMs();$("file").value="";showStatus();$("view").innerHTML="";return render()}
   const act=t.dataset.act;if(!act)return;
   if(act==="more"){S.limit+=30;return draw()}
+  if(act==="selall"){const kind=S.tab==="kws"?"kws":S.tab==="assets"?"assets":"ads";shownKeys(kind).forEach(k=>S.pick[kind].add(k));return draw()}
+  if(act==="selclr"){Object.values(S.pick).forEach(x=>x.clear());return draw()}
+  if(act==="selx"){let wb;try{wb=selectedBook()}catch(e){$("selMsg").textContent="Could not build the file.";return}return saveBook(wb,"selected-export.xlsx",$("selMsg"))}
   if(act==="allyes"||act==="allno"){S.ads.forEach(a=>{const ids=new Set([...a.h,...a.d].filter(x=>x.sug).map(x=>x.sug.id));ids.forEach(id=>resolve(a,id,act==="allyes"))});return render()}
   if(act==="yes"||act==="no"){const a=S.ads.find(x=>x.id===+t.dataset.ad);resolve(a,+t.dataset.sug,act==="yes");mirror(a);return render()}
   const ad=S.ads.find(a=>a.id===+t.dataset.ad),k=t.dataset.k,i=+t.dataset.i;
@@ -712,6 +757,7 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("change",async e=>{
   const t=e.target;
+  if(t.classList.contains("pick")){const set=S.pick[t.dataset.kind];t.dataset.key.split("\u0002").filter(Boolean).forEach(k=>t.checked?set.add(k):set.delete(k));return draw()}
   if(t.classList.contains("ln")){const ad=S.ads.find(a=>a.id===+t.dataset.ad);ad[t.dataset.k][+t.dataset.i].text=norm(t.value);mirror(ad);return render()}
   if(t.id==="fScope"){S.scope=t.value;return render()}
   if(t.id==="fStatus"){S.status=t.value;S.limit=30;return render()}
@@ -742,7 +788,7 @@ async function loadFiles(files){
     if(ads){S.ads=ads;S.ads.forEach((a,i)=>a.id=i);S.recs=null;S.edit.clear();S.loaded.ads=`✓ Ad report (${ads.length} ads)`}
     if(kws){S.kws=kws;S.loaded.kws=`✓ Keyword report (${kws.length} keywords)`}
     if(assets){S.assets=assets;S.loaded.assets=`✓ Asset report (${assets.length} rows)`}
-    indexAssets();refresh();S.expanded.clear();S.sel=null;S.q="";$("fQ").value="";buildMs();
+    if(ads)S.pick.ads.clear();if(kws)S.pick.kws.clear();if(assets)S.pick.assets.clear();indexAssets();refresh();S.expanded.clear();S.sel=null;S.q="";$("fQ").value="";buildMs();
     if(!ads&&!S.ads.length)S.tab=assets?"assets":"kws"}
   if(recs){if(S.ads.length&&!S.isSample){S.ads.forEach(a=>resolveAll(a));applyRecs(recs);bad.push(`✓ Suggestions file (${S.recs.n} matched, ${S.recs.miss.length} set aside)`);S.tab="ads"}else bad.push("⚠ Load the ad report before the suggestions file")}
   showStatus(bad);$("view").innerHTML="";render();
